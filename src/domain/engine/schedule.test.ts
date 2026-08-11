@@ -48,27 +48,8 @@ describe('generateAlternativePath', () => {
     expect(steadier.issues).toEqual([])
   })
 
-  it('detects prerequisite, offering, credit-cap, and half-time violations', () => {
+  it('derives credits from known courses instead of trusting caller totals', () => {
     const issues = validateSchedule(
-      mayaDataset,
-      mayaCourseFailure,
-      pathStrategies[1]!,
-      [
-        {
-          termId: 'spring-2026',
-          courseIds: ['CS301'],
-          credits: 12,
-        },
-      ],
-    )
-
-    expect(issues.map((issue) => issue.code)).toEqual([
-      'over-credit-cap',
-      'course-unavailable',
-      'prerequisite-order',
-    ])
-
-    const halfTimeIssue = validateSchedule(
       mayaDataset,
       mayaCourseFailure,
       pathStrategies[0]!,
@@ -76,12 +57,68 @@ describe('generateAlternativePath', () => {
         {
           termId: 'spring-2026',
           courseIds: ['CS201'],
-          credits: 4,
+          credits: 6,
         },
       ],
     )
-    expect(halfTimeIssue.map((issue) => issue.code)).toContain(
+
+    expect(issues.map((issue) => issue.code)).toEqual([
+      'credit-mismatch',
       'below-half-time',
+    ])
+  })
+
+  it('rejects unknown terms and courses', () => {
+    const issues = validateSchedule(
+      mayaDataset,
+      mayaCourseFailure,
+      pathStrategies[0]!,
+      [
+        {
+          termId: 'spring-2099',
+          courseIds: ['CS999'],
+          credits: 6,
+        },
+      ],
     )
+
+    expect(issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining([
+        'unknown-course',
+        'unknown-term',
+        'credit-mismatch',
+        'below-half-time',
+      ]),
+    )
+  })
+
+  it('detects prerequisite, offering, and credit-cap violations', () => {
+    const prerequisiteIssues = validateSchedule(
+      mayaDataset,
+      mayaCourseFailure,
+      pathStrategies[0]!,
+      [{ termId: 'spring-2026', courseIds: ['CS301'], credits: 3 }],
+    )
+    expect(prerequisiteIssues.map((issue) => issue.code)).toEqual([
+      'below-half-time',
+      'course-unavailable',
+      'prerequisite-order',
+    ])
+
+    const overloadIssues = validateSchedule(
+      mayaDataset,
+      mayaCourseFailure,
+      pathStrategies[1]!,
+      [
+        {
+          termId: 'fall-2025',
+          courseIds: ['CS240', 'STAT250', 'MATH252', 'HUM210'],
+          credits: 12,
+        },
+      ],
+    )
+    expect(overloadIssues.map((issue) => issue.code)).toEqual([
+      'over-credit-cap',
+    ])
   })
 })

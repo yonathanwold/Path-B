@@ -10,35 +10,10 @@ import {
   type ScenarioResult,
 } from '../model'
 
-const recommendationByPriority: Record<
-  Priority,
-  {
-    pathId: AlternativePath['id']
-    reason: string
-    advisorQuestion: string
-  }
-> = {
-  'graduate-on-time': {
-    pathId: 'faster-finish',
-    reason:
-      'This path keeps Maya’s May 2027 finish, but it creates one 15-credit term while she is working.',
-    advisorQuestion:
-      'If I repeat CS 201 next spring, can CS 301 and CS 330 both count toward a May 2027 graduation plan?',
-  },
-  'protect-work-schedule': {
-    pathId: 'steadier-load',
-    reason:
-      'This path keeps every term at 10 credits or fewer, but graduation moves to December 2027.',
-    advisorQuestion:
-      'Could CS 201 be repeated next spring while I take CS 240 and STAT 250 without dropping below half-time?',
-  },
-  'limit-extra-cost': {
-    pathId: 'faster-finish',
-    reason:
-      'Both paths include the repeated course, but finishing by May avoids the synthetic added-term fee.',
-    advisorQuestion:
-      'Which repeat-course charges and aid rules should I confirm before choosing the May 2027 path?',
-  },
+const recommendationByPriority: Record<Priority, AlternativePath['id']> = {
+  'graduate-on-time': 'faster-finish',
+  'protect-work-schedule': 'steadier-load',
+  'limit-extra-cost': 'faster-finish',
 }
 
 function placementByCourse(path: AlternativePath) {
@@ -67,6 +42,9 @@ export function analyzeCourseFailure(
   if (!failedCourse || !disruptionEntry) {
     throw new Error('The disruption must target a course in the baseline plan.')
   }
+  if (disruptionEntry.status !== 'in-progress') {
+    throw new Error('A course-failure disruption must target an in-progress course.')
+  }
 
   const alternatives = pathStrategies.map((strategy) =>
     generateAlternativePath(dataset, disruption, strategy),
@@ -86,8 +64,6 @@ export function analyzeCourseFailure(
     throw new Error('The failed course was not placed in the recovery schedule.')
   }
 
-  const recommendation = recommendationByPriority[priority]
-
   return {
     disruption,
     priority,
@@ -103,9 +79,7 @@ export function analyzeCourseFailure(
       }),
     ),
     alternatives,
-    recommendedPathId: recommendation.pathId,
-    recommendationReason: recommendation.reason,
-    advisorQuestion: recommendation.advisorQuestion,
+    recommendedPathId: recommendationByPriority[priority],
     assumptionIds: dataset.assumptions.map((assumption) => assumption.id),
     sourceIds: dataset.sources.map((source) => source.id),
   }

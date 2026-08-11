@@ -58,7 +58,9 @@ function scheduleRemainingCourses(
       .filter(
         (entry) =>
           entry.courseId !== disruption.courseId &&
-          (entry.status === 'completed' || entry.termId === disruption.termId),
+          (entry.status === 'completed' ||
+            (entry.status === 'in-progress' &&
+              entry.termId === disruption.termId)),
       )
       .map((entry) => entry.courseId),
   )
@@ -135,7 +137,9 @@ export function validateSchedule(
       .filter(
         (entry) =>
           entry.courseId !== disruption.courseId &&
-          (entry.status === 'completed' || entry.termId === disruption.termId),
+          (entry.status === 'completed' ||
+            (entry.status === 'in-progress' &&
+              entry.termId === disruption.termId)),
       )
       .map((entry) => entry.courseId),
   )
@@ -143,25 +147,49 @@ export function validateSchedule(
 
   schedule.forEach((scheduledTerm) => {
     const term = terms.get(scheduledTerm.termId)
+    const scheduledCourses = scheduledTerm.courseIds.flatMap((courseId) => {
+      const course = courses.get(courseId)
+      if (!course) {
+        issues.push({
+          code: 'unknown-course',
+          message: `Unknown scheduled course: ${courseId}.`,
+        })
+        return []
+      }
+      return [course]
+    })
+    const actualCredits = scheduledCourses.reduce(
+      (total, course) => total + course.credits,
+      0,
+    )
 
-    if (scheduledTerm.credits > strategy.maximumCredits) {
+    if (!term) {
+      issues.push({
+        code: 'unknown-term',
+        message: `Unknown scheduled term: ${scheduledTerm.termId}.`,
+      })
+    }
+    if (scheduledTerm.credits !== actualCredits) {
+      issues.push({
+        code: 'credit-mismatch',
+        message: `${scheduledTerm.termId} declares ${scheduledTerm.credits} credits, but its known courses total ${actualCredits}.`,
+      })
+    }
+    if (actualCredits > strategy.maximumCredits) {
       issues.push({
         code: 'over-credit-cap',
         message: `${scheduledTerm.termId} exceeds ${strategy.maximumCredits} credits.`,
       })
     }
-    if (scheduledTerm.credits < dataset.student.minimumCreditsPerTerm) {
+    if (actualCredits < dataset.student.minimumCreditsPerTerm) {
       issues.push({
         code: 'below-half-time',
         message: `${scheduledTerm.termId} falls below the ${dataset.student.minimumCreditsPerTerm}-credit assumption.`,
       })
     }
 
-    scheduledTerm.courseIds.forEach((courseId) => {
-      const course = courses.get(courseId)
-      if (!course || !term) return
-
-      if (!course.offeredIn.includes(term.season)) {
+    scheduledCourses.forEach((course) => {
+      if (term && !course.offeredIn.includes(term.season)) {
         issues.push({
           code: 'course-unavailable',
           message: `${course.code} is not offered in ${term.label}.`,
@@ -179,13 +207,13 @@ export function validateSchedule(
       }
     })
 
-    scheduledTerm.courseIds.forEach((courseId) => completed.add(courseId))
+    scheduledCourses.forEach((course) => completed.add(course.id))
   })
 
   return issues
 }
 
-function pathCopy(
+function measurePath(
   dataset: PathBDataset,
   strategy: PathStrategy,
   schedule: ScheduledTerm[],
@@ -204,8 +232,6 @@ function pathCopy(
       maximumCredits,
       remainsHalfTime,
       workFit,
-      sacrifice: 'One 15-credit term while Maya is working 20 hours each week',
-      protects: ['May 2027 graduation', 'Half-time status in every term'],
     }
   }
 
@@ -213,8 +239,6 @@ function pathCopy(
     maximumCredits,
     remainsHalfTime,
     workFit,
-    sacrifice: 'Graduation moves one term later, to December 2027',
-    protects: ['10-credit maximum', '20-hour weekly work schedule'],
   }
 }
 
@@ -240,7 +264,7 @@ export function generateAlternativePath(
   const estimatedAdditionalCost =
     (repeatedCourse?.credits ?? 0) * dataset.costModel.tuitionPerCredit +
     additionalTerms * dataset.costModel.enrollmentFeePerTerm
-  const copy = pathCopy(dataset, strategy, schedule)
+  const measurements = measurePath(dataset, strategy, schedule)
 
   if (!lastTerm) {
     throw new Error(`The ${strategy.id} strategy produced an empty schedule.`)
@@ -253,13 +277,11 @@ export function generateAlternativePath(
     schedule,
     graduationTermId: lastTerm.termId,
     busiestTermId: busiestTerm.termId,
-    maximumCredits: copy.maximumCredits,
-    workFit: copy.workFit,
-    remainsHalfTime: copy.remainsHalfTime,
+    maximumCredits: measurements.maximumCredits,
+    workFit: measurements.workFit,
+    remainsHalfTime: measurements.remainsHalfTime,
     estimatedAdditionalCost,
     additionalTerms,
-    sacrifice: copy.sacrifice,
-    protects: copy.protects,
     issues,
   }
 }

@@ -51,4 +51,17 @@ describe('analyzeCourseFailure', () => {
       ),
     ).toThrow('The disruption must target a course in the baseline plan.')
   })
+
+  it.each([
+    ['CS150', 'fall-2024'],
+    ['CS301', 'fall-2025'],
+  ])('rejects a failure for non-current course %s', (courseId, termId) => {
+    expect(() =>
+      analyzeCourseFailure(
+        mayaDataset,
+        { type: 'course-not-passed', courseId, termId },
+        'graduate-on-time',
+      ),
+    ).toThrow('A course-failure disruption must target an in-progress course.')
+  })
 })

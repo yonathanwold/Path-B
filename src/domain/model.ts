@@ -112,15 +112,71 @@ export const PathBDatasetSchema = UniqueIdsSchema.superRefine((dataset, context)
     context,
   )
   reportDuplicates(
+    dataset.assumptions.map((assumption) => assumption.id),
+    ['assumptions'],
+    'assumption id',
+    context,
+  )
+  reportDuplicates(
     dataset.courses.map((course) => course.id),
     ['courses'],
     'course id',
     context,
   )
 
+  const seenTermOrders = new Set<number>()
+  dataset.terms.forEach((term, index) => {
+    if (seenTermOrders.has(term.order)) {
+      context.addIssue({
+        code: 'custom',
+        message: `Duplicate term order: ${term.order}`,
+        path: ['terms', index, 'order'],
+      })
+    }
+    seenTermOrders.add(term.order)
+  })
+
+  const seenPlanCourses = new Set<string>()
+  dataset.baselinePlan.entries.forEach((entry, index) => {
+    if (seenPlanCourses.has(entry.courseId)) {
+      context.addIssue({
+        code: 'custom',
+        message: `Duplicate baseline course: ${entry.courseId}`,
+        path: ['baselinePlan', 'entries', index, 'courseId'],
+      })
+    }
+    seenPlanCourses.add(entry.courseId)
+  })
+
+  const inProgressTermIds = new Set(
+    dataset.baselinePlan.entries
+      .filter((entry) => entry.status === 'in-progress')
+      .map((entry) => entry.termId),
+  )
+  if (inProgressTermIds.size !== 1) {
+    context.addIssue({
+      code: 'custom',
+      message: 'All in-progress courses must share one current term.',
+      path: ['baselinePlan', 'entries'],
+    })
+  }
+
   const sourceIds = new Set(dataset.sources.map((source) => source.id))
   const termIds = new Set(dataset.terms.map((term) => term.id))
   const courseIds = new Set(dataset.courses.map((course) => course.id))
+  const coursesById = new Map(dataset.courses.map((course) => [course.id, course]))
+  const termsById = new Map(dataset.terms.map((term) => [term.id, term]))
+  const planByCourse = new Map(
+    dataset.baselinePlan.entries.map((entry) => [entry.courseId, entry]),
+  )
+
+  if (!sourceIds.has(dataset.costModel.sourceId)) {
+    context.addIssue({
+      code: 'custom',
+      message: `Unknown cost model source: ${dataset.costModel.sourceId}`,
+      path: ['costModel', 'sourceId'],
+    })
+  }
 
   dataset.assumptions.forEach((assumption, index) => {
     if (!sourceIds.has(assumption.sourceId)) {
@@ -172,7 +228,72 @@ export const PathBDatasetSchema = UniqueIdsSchema.superRefine((dataset, context)
         path: ['baselinePlan', 'entries', index, 'termId'],
       })
     }
+
+    const course = coursesById.get(entry.courseId)
+    const term = termsById.get(entry.termId)
+    if (course && term && !course.offeredIn.includes(term.season)) {
+      context.addIssue({
+        code: 'custom',
+        message: `${course.code} is not offered in ${term.label}`,
+        path: ['baselinePlan', 'entries', index, 'termId'],
+      })
+    }
+
+    if (course && term) {
+      course.prerequisites.forEach((prerequisite) => {
+        const prerequisiteEntry = planByCourse.get(prerequisite)
+        const prerequisiteTerm = prerequisiteEntry
+          ? termsById.get(prerequisiteEntry.termId)
+          : undefined
+
+        if (!prerequisiteEntry || !prerequisiteTerm) {
+          context.addIssue({
+            code: 'custom',
+            message: `Baseline plan is missing prerequisite ${prerequisite} for ${course.code}`,
+            path: ['baselinePlan', 'entries', index, 'courseId'],
+          })
+        } else if (prerequisiteTerm.order >= term.order) {
+          context.addIssue({
+            code: 'custom',
+            message: `${course.code} must follow ${prerequisite}`,
+            path: ['baselinePlan', 'entries', index, 'termId'],
+          })
+        }
+      })
+    }
   })
+
+  const visiting = new Set<string>()
+  const visited = new Set<string>()
+  const reportedCycles = new Set<string>()
+
+  function visit(courseId: string, path: string[]) {
+    if (visited.has(courseId)) return
+    if (visiting.has(courseId)) {
+      const cycleStart = path.indexOf(courseId)
+      const cycle = [...path.slice(cycleStart), courseId]
+      const cycleKey = cycle.toSorted().join('|')
+      if (!reportedCycles.has(cycleKey)) {
+        reportedCycles.add(cycleKey)
+        context.addIssue({
+          code: 'custom',
+          message: `Prerequisite cycle: ${cycle.join(' → ')}`,
+          path: ['courses'],
+        })
+      }
+      return
+    }
+
+    visiting.add(courseId)
+    const course = coursesById.get(courseId)
+    course?.prerequisites.forEach((prerequisite) =>
+      visit(prerequisite, [...path, courseId]),
+    )
+    visiting.delete(courseId)
+    visited.add(courseId)
+  }
+
+  dataset.courses.forEach((course) => visit(course.id, []))
 
   if (!termIds.has(dataset.baselinePlan.expectedGraduationTermId)) {
     context.addIssue({
@@ -223,9 +344,12 @@ export type ScheduledTerm = {
 export type ScheduleIssue = {
   code:
     | 'below-half-time'
+    | 'credit-mismatch'
     | 'over-credit-cap'
     | 'prerequisite-order'
     | 'course-unavailable'
+    | 'unknown-course'
+    | 'unknown-term'
   message: string
 }
 
@@ -241,8 +365,6 @@ export type AlternativePath = {
   remainsHalfTime: boolean
   estimatedAdditionalCost: number
   additionalTerms: number
-  sacrifice: string
-  protects: string[]
   issues: ScheduleIssue[]
 }
 
@@ -263,8 +385,6 @@ export type ScenarioResult = {
   affectedCourses: AffectedCourse[]
   alternatives: AlternativePath[]
   recommendedPathId: AlternativePath['id']
-  recommendationReason: string
-  advisorQuestion: string
   assumptionIds: string[]
   sourceIds: string[]
 }

@@ -37,7 +37,7 @@ export function tracePrerequisiteCascade(
     const current = queue.shift()
     if (!current) break
 
-    const nextCourses = dependentCourses.get(current.courseId) ?? []
+    const nextCourses = (dependentCourses.get(current.courseId) ?? []).toSorted()
     nextCourses.forEach((courseId) => {
       if (visited.has(courseId)) return
 

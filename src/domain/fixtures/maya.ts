@@ -303,7 +303,7 @@ export const mayaDataset = PathBDatasetSchema.parse({
       title: 'Advanced Algorithms',
       credits: 3,
       prerequisites: ['CS301'],
-      offeredIn: ['spring'],
+      offeredIn: ['fall', 'spring'],
       sourceId: 'synthetic-catalog',
     },
     {

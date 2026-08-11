@@ -11,7 +11,7 @@ The primary agent accepted this concept set under the repository's autonomous-bu
 - **Question:** If Maya does not pass a once-yearly prerequisite, what changes and which viable path best protects what matters to her?
 - **Insight title:** Maya's plan hit a fault line.
 - **Artifact:** an explanatory term rail plus a small directed prerequisite dependency view, followed by a precise two-path comparison.
-- **Immediate evidence:** CS 201 fails, three requirements depend on it, and the projected sequence shifts.
+- **Immediate evidence:** CS 201 fails, two courses are directly blocked, five planned courses shift downstream, and the projected sequence changes.
 - **On-demand detail:** course facts, assumptions, sources, calculation notes, and AI/fallback explanation.
 - **Annotation:** direct labels explain fault, cause, effect, ripple, and protected priority. Essential values never live only in a tooltip.
 
