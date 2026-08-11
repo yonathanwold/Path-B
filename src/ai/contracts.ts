@@ -1,9 +1,10 @@
 import { z } from 'zod'
 
-import { PrioritySchema } from '../domain/index.ts'
-
-export const ScenarioIdSchema = z.literal('maya-cs201-failure')
-export const RecoveryPathIdSchema = z.enum(['faster-finish', 'steadier-load'])
+import {
+  PrioritySchema,
+  RecoveryPathIdSchema,
+  ScenarioIdSchema,
+} from '../domain/index.ts'
 
 export const ExplanationRequestSchema = z
   .object({

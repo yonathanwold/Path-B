@@ -22,6 +22,7 @@ function Harness() {
     dataset: mayaDataset,
     priority: 'graduate-on-time',
     scenario,
+    scenarioId: 'maya-cs201-failure',
     selectedPath,
   })
 

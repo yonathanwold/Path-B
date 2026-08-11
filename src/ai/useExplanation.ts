@@ -10,6 +10,7 @@ import type {
   AlternativePath,
   PathBDataset,
   Priority,
+  ScenarioId,
   ScenarioResult,
 } from '../domain'
 import { buildDeterministicExplanation } from '../presentation/scenario'
@@ -24,6 +25,7 @@ type UseExplanationInput = {
   dataset: PathBDataset
   scenario: ScenarioResult
   priority: Priority
+  scenarioId: ScenarioId
   selectedPath: AlternativePath
 }
 
@@ -31,9 +33,10 @@ export function useExplanation({
   dataset,
   scenario,
   priority,
+  scenarioId,
   selectedPath,
 }: UseExplanationInput): ExplanationViewState {
-  const requestKey = `${priority}:${selectedPath.id}`
+  const requestKey = `${scenarioId}:${priority}:${selectedPath.id}`
   const fallback = useMemo(
     () =>
       ExplanationContentSchema.parse(
@@ -63,7 +66,7 @@ export function useExplanation({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             version: 1,
-            scenarioId: 'maya-cs201-failure',
+            scenarioId,
             priority,
             selectedPathId: selectedPath.id,
           }),
@@ -101,7 +104,7 @@ export function useExplanation({
       window.clearTimeout(timeoutId)
       controller.abort()
     }
-  }, [fallback, priority, requestKey, selectedPath.id])
+  }, [fallback, priority, requestKey, scenarioId, selectedPath.id])
 
   if (state.requestKey !== requestKey) {
     return {

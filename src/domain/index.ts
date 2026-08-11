@@ -7,6 +7,12 @@ export {
 } from './engine/schedule.ts'
 export { mayaCourseFailure, mayaDataset } from './fixtures/maya.ts'
 export {
+  RecoveryPathIdSchema,
+  resolveScenario,
+  ScenarioIdSchema,
+  ScenarioSessionSchema,
+} from './scenarios.ts'
+export {
   CourseFailureDisruptionSchema,
   PathBDatasetSchema,
   PrioritySchema,
@@ -21,3 +27,4 @@ export type {
   ScenarioResult,
   ScheduledTerm,
 } from './model.ts'
+export type { ScenarioId, ScenarioSession } from './scenarios.ts'

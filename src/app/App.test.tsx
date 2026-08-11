@@ -2,10 +2,27 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { App } from './App'
+import { App } from './App.tsx'
+import { scenarioSessionKey } from './session.ts'
+
+async function runScenario(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('link', { name: 'Start the two-minute demo' }))
+  expect(window.location.pathname).toBe('/stress-test')
+  expect(
+    screen.getByRole('radio', { name: /I did not pass CS 201/ }),
+  ).toBeChecked()
+
+  await user.click(screen.getByRole('button', { name: 'Run the stress test' }))
+  expect(window.location.pathname).toBe('/impact')
+  return screen.getByRole('heading', {
+    name: "CS 201 wasn't passed. 5 planned courses must move.",
+  })
+}
 
 describe('App', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/')
+    window.sessionStorage.clear()
     vi.stubGlobal(
       'fetch',
       vi.fn(() => new Promise<Response>(() => undefined)),
@@ -14,130 +31,115 @@ describe('App', () => {
 
   afterEach(() => vi.unstubAllGlobals())
 
-  it('introduces the crash-test story', () => {
+  it('introduces the routed resilience story', () => {
     render(<App />)
 
     expect(
       screen.getByRole('heading', {
-        name: 'Real life changed. Will Maya\'s plan hold?',
+        name: "Real life changed. Will Maya's plan hold?",
       }),
     ).toBeInTheDocument()
-    expect(screen.getByText('A crash test for your college plan')).toBeVisible()
-    expect(
-      screen.getByRole('radio', { name: /I did not pass CS 201/ }),
-    ).toBeChecked()
-    expect(screen.getByText('More scenarios in a full version')).toBeVisible()
-    expect(
-      screen.queryByRole('radio', { name: /I lost summer availability/ }),
-    ).not.toBeInTheDocument()
-    expect(screen.getByText(/Synthetic Great Lakes University fixture/)).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Overview' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(screen.getByText('Degree-plan resilience')).toBeVisible()
+    expect(screen.getAllByText('Synthetic fixture').length).toBeGreaterThan(0)
+    expect(screen.getByRole('link', { name: "Review Maya's plan" })).toHaveAttribute(
+      'href',
+      '/plan',
+    )
   })
 
-  it('runs the crash test and focuses the deterministic result', async () => {
+  it('runs the stress test, persists intent, and focuses the impact', async () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Run the crash test' }))
+    const heading = await runScenario(user)
 
-    expect(
-      screen.getByRole('heading', { name: 'Tracing the dependency chain…' }),
-    ).toBeVisible()
-
-    const resultHeading = await screen.findByRole(
-      'heading',
-      { name: "Maya's plan hit a fault line." },
-      { timeout: 1500 },
-    )
-
-    await waitFor(() => expect(resultHeading).toHaveFocus())
+    await waitFor(() => expect(heading).toHaveFocus())
     expect(
       screen.getByRole('table', {
-        name: 'Faster finish course movement by term',
+        name: 'Earliest viable course movement by term',
       }),
     ).toBeVisible()
-    expect(screen.getByText('Recommended for this priority')).toBeVisible()
-    expect(
-      screen.getByRole('heading', { name: 'One question to ask your advisor' }),
-    ).toBeVisible()
-    expect(screen.getByText('Before the meeting')).toBeVisible()
-    expect(
-      screen.getByText('Personalizing the wording without changing plan facts.'),
-    ).toBeVisible()
+    expect(screen.getByText('2 courses', { selector: 'dd' })).toBeVisible()
+    expect(JSON.parse(window.sessionStorage.getItem(scenarioSessionKey) ?? '{}')).toMatchObject({
+      version: 1,
+      scenarioId: 'maya-cs201-failure',
+      priority: 'graduate-on-time',
+      selectedPathId: 'faster-finish',
+    })
   })
 
-  it('changes the recommendation when Maya protects her work schedule', async () => {
+  it('changes the recommendation when Maya protects work', async () => {
     const user = userEvent.setup()
     render(<App />)
+    await runScenario(user)
 
-    await user.click(screen.getByRole('button', { name: 'Run the crash test' }))
-    await screen.findByRole(
-      'heading',
-      { name: "Maya's plan hit a fault line." },
-      { timeout: 1500 },
-    )
-
+    await user.click(screen.getByRole('link', { name: 'Compare recovery paths' }))
     await user.click(
-      screen.getByRole('radio', { name: /Keep my work schedule/ }),
+      screen.getByRole('radio', { name: /Keep my 20-hour work schedule/ }),
     )
 
-    expect(
-      screen.getByRole('radio', { name: /Steadier load/ }),
-    ).toBeChecked()
-    expect(
-      screen.getByRole('table', {
-        name: 'Steadier load course movement by term',
-      }),
-    ).toBeVisible()
-    expect(screen.getByText('comfortable — 10-credit maximum')).toBeVisible()
-    expect(
-      screen.getByText(/keeps every term at 10 credits or fewer/),
-    ).toHaveTextContent('December 2027 graduation')
+    expect(screen.getByText('Recommended: Steadier load')).toBeVisible()
+    expect(screen.getByRole('radio', { name: /Steadier load/ })).toBeChecked()
+    expect(screen.getByText('December 2027')).toBeVisible()
+    expect(screen.getByText(/Comfortable · 10-credit maximum/)).toBeVisible()
   })
 
-  it('lets the student inspect the other viable path without changing facts', async () => {
+  it('persists an explicit alternative through the advisor route and remount', async () => {
     const user = userEvent.setup()
+    const firstRender = render(<App />)
+    await runScenario(user)
+
+    await user.click(screen.getByRole('link', { name: 'Compare recovery paths' }))
+    await user.click(
+      screen.getByRole('radio', { name: /Keep my 20-hour work schedule/ }),
+    )
+    await user.click(screen.getByRole('radio', { name: /Faster finish/ }))
+    await user.click(screen.getByRole('link', { name: 'Prepare advisor brief' }))
+
+    expect(window.location.pathname).toBe('/advisor')
+    expect(screen.getByText('Faster finish', { selector: 'dd' })).toBeVisible()
+    expect(
+      screen.getByText(/still graduate in May 2027/),
+    ).toBeVisible()
+
+    firstRender.unmount()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Run the crash test' }))
-    await screen.findByRole(
-      'heading',
-      { name: "Maya's plan hit a fault line." },
-      { timeout: 1500 },
-    )
-
-    await user.click(screen.getByRole('radio', { name: /Steadier load/ }))
-
     expect(
-      screen.getByRole('table', {
-        name: 'Steadier load course movement by term',
-      }),
+      screen.getByRole('heading', { name: 'Leave with one useful question.' }),
     ).toBeVisible()
-    expect(
-      screen.getByText(/Spring 2026 alongside CS 302 and CS 340/),
-    ).toHaveTextContent('December 2027 graduation')
-    expect(
-      screen.getByText(/Viewing Steadier load as an alternative/),
-    ).toHaveTextContent('Faster finish is recommended')
-    expect(screen.getByText(/2 courses are blocked directly/)).toBeVisible()
+    expect(screen.getByText('Faster finish', { selector: 'dd' })).toBeVisible()
+    expect(screen.getByText('Verified facts ready · optional wording loading')).toBeVisible()
   })
 
-  it('returns to the unchanged starting plan', async () => {
-    const user = userEvent.setup()
+  it('shows an honest empty state for a protected deep link without a session', () => {
+    window.history.replaceState({}, '', '/impact')
     render(<App />)
-
-    await user.click(screen.getByRole('button', { name: 'Run the crash test' }))
-    await screen.findByRole(
-      'heading',
-      { name: "Maya's plan hit a fault line." },
-      { timeout: 1500 },
-    )
-    await user.click(screen.getByRole('button', { name: 'Start over' }))
 
     expect(
       screen.getByRole('heading', {
-        name: 'Real life changed. Will Maya\'s plan hold?',
+        name: 'Run the scenario before opening its results.',
       }),
     ).toBeVisible()
-    expect(screen.queryByText("Maya's plan hit a fault line.")).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Go to Stress Test' })).toHaveAttribute(
+      'href',
+      '/stress-test',
+    )
+  })
+
+  it('clears the scenario and returns to the stress test', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await runScenario(user)
+
+    await user.click(screen.getByRole('button', { name: 'Reset scenario' }))
+
+    expect(window.location.pathname).toBe('/stress-test')
+    expect(window.sessionStorage.getItem(scenarioSessionKey)).toBeNull()
+    expect(screen.getByRole('heading', { name: 'What changed?' })).toBeVisible()
   })
 })

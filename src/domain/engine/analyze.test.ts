@@ -64,4 +64,17 @@ describe('analyzeCourseFailure', () => {
       ),
     ).toThrow('A course-failure disruption must target an in-progress course.')
   })
+
+  it('fails closed when a generated path violates the planning assumptions', () => {
+    const impossibleHalfTime = structuredClone(mayaDataset)
+    impossibleHalfTime.student.minimumCreditsPerTerm = 16
+
+    expect(() =>
+      analyzeCourseFailure(
+        impossibleHalfTime,
+        mayaCourseFailure,
+        'graduate-on-time',
+      ),
+    ).toThrow('violates the current planning assumptions')
+  })
 })

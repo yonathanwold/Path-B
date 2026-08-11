@@ -13,9 +13,10 @@ import {
 } from '../src/ai/contracts.ts'
 import {
   analyzeCourseFailure,
-  mayaCourseFailure,
-  mayaDataset,
+  resolveScenario,
+  ScenarioIdSchema,
   type AlternativePath,
+  type PathBDataset,
   type ScenarioResult,
 } from '../src/domain/index.ts'
 import {
@@ -45,7 +46,7 @@ const FactPathSchema = z
 
 export const ClaudeFactPacketSchema = z
   .object({
-    scenarioId: z.literal('maya-cs201-failure'),
+    scenarioId: ScenarioIdSchema,
     syntheticInstitution: z.string(),
     fixtureWarning: z.string(),
     student: z
@@ -101,15 +102,15 @@ export class InvalidExplanationRequestError extends Error {
   }
 }
 
-function courseCode(datasetCourseId: string) {
+function courseCode(dataset: PathBDataset, datasetCourseId: string) {
   return (
-    mayaDataset.courses.find((course) => course.id === datasetCourseId)?.code ??
+    dataset.courses.find((course) => course.id === datasetCourseId)?.code ??
     datasetCourseId
   )
 }
 
-function factPath(path: AlternativePath) {
-  const presented = presentPath(mayaDataset, path)
+function factPath(dataset: PathBDataset, path: AlternativePath) {
+  const presented = presentPath(dataset, path)
 
   return FactPathSchema.parse({
     id: path.id,
@@ -131,10 +132,11 @@ export function buildClaudeFactPacket(
   scenario: ScenarioResult,
   selectedPath: AlternativePath,
 ): ClaudeFactPacket {
+  const { dataset } = resolveScenario(request.scenarioId)
   const comparisonPath =
     scenario.alternatives.find((path) => path.id !== selectedPath.id) ??
     selectedPath
-  const failedCourse = mayaDataset.courses.find(
+  const failedCourse = dataset.courses.find(
     (course) => course.id === scenario.failedCourseId,
   )
   const directBlocked = scenario.affectedCourses.filter(
@@ -149,34 +151,34 @@ export function buildClaudeFactPacket(
 
   return ClaudeFactPacketSchema.parse({
     scenarioId: request.scenarioId,
-    syntheticInstitution: mayaDataset.institutionLabel,
+    syntheticInstitution: dataset.institutionLabel,
     fixtureWarning:
       'All academic, eligibility, and cost values are synthetic planning facts that the student must verify with the real institution.',
     student: {
-      firstName: mayaDataset.student.name,
-      workHoursPerWeek: mayaDataset.student.workHoursPerWeek,
-      minimumCreditsPerTerm: mayaDataset.student.minimumCreditsPerTerm,
+      firstName: dataset.student.name,
+      workHoursPerWeek: dataset.student.workHoursPerWeek,
+      minimumCreditsPerTerm: dataset.student.minimumCreditsPerTerm,
       selectedPriority: priorityLabel,
     },
     disruption: {
       failedCourseCode: failedCourse?.code ?? scenario.failedCourseId,
       failedCourseTitle: failedCourse?.title ?? scenario.failedCourseId,
-      failedTerm: termLabel(mayaDataset, scenario.disruption.termId),
-      nextRepeatTerm: termLabel(mayaDataset, scenario.repeatTermId),
+      failedTerm: termLabel(dataset, scenario.disruption.termId),
+      nextRepeatTerm: termLabel(dataset, scenario.repeatTermId),
       directBlockedCourseCodes: directBlocked.map((affected) =>
-        courseCode(affected.courseId),
+        courseCode(dataset, affected.courseId),
       ),
       affectedCourseCodes: scenario.affectedCourses.map((affected) =>
-        courseCode(affected.courseId),
+        courseCode(dataset, affected.courseId),
       ),
       directBlockedCount: directBlocked.length,
       downstreamShiftCount: scenario.affectedCourses.length,
     },
-    selectedPath: factPath(selectedPath),
-    comparisonPath: factPath(comparisonPath),
+    selectedPath: factPath(dataset, selectedPath),
+    comparisonPath: factPath(dataset, comparisonPath),
     repeatTermCompanionCourseCodes: (repeatTerm?.courseIds ?? [])
       .filter((courseId) => courseId !== scenario.failedCourseId)
-      .map(courseCode),
+      .map((courseId) => courseCode(dataset, courseId)),
     sourceIds: scenario.sourceIds,
     assumptionIds: scenario.assumptionIds,
   })
@@ -282,9 +284,10 @@ export async function createExplanation(
   if (!requestResult.success) throw new InvalidExplanationRequestError()
 
   const request = requestResult.data
+  const { dataset, disruption } = resolveScenario(request.scenarioId)
   const scenario = analyzeCourseFailure(
-    mayaDataset,
-    mayaCourseFailure,
+    dataset,
+    disruption,
     request.priority,
   )
   const selectedPath = scenario.alternatives.find(
@@ -293,7 +296,7 @@ export async function createExplanation(
   if (!selectedPath) throw new InvalidExplanationRequestError()
 
   const fallback = ExplanationContentSchema.parse(
-    buildDeterministicExplanation(mayaDataset, scenario, selectedPath),
+    buildDeterministicExplanation(dataset, scenario, selectedPath),
   )
   const apiKey = options.apiKey?.trim()
 

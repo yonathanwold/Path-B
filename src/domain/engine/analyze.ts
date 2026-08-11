@@ -49,6 +49,15 @@ export function analyzeCourseFailure(
   const alternatives = pathStrategies.map((strategy) =>
     generateAlternativePath(dataset, disruption, strategy),
   )
+
+  const invalidPath = alternatives.find((path) => path.issues.length > 0)
+  if (invalidPath) {
+    throw new Error(
+      `${invalidPath.title} violates the current planning assumptions: ${invalidPath.issues
+        .map((issue) => issue.message)
+        .join(' ')}`,
+    )
+  }
   const fasterPath = alternatives.find((path) => path.id === 'faster-finish')
   const steadierPath = alternatives.find((path) => path.id === 'steadier-load')
 

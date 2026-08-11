@@ -23,21 +23,25 @@ export const priorityOptions: {
   id: Priority
   label: string
   description: string
+  shortDescription: string
 }[] = [
   {
     id: 'graduate-on-time',
-    label: 'Finish as soon as possible',
+    label: 'Graduate as soon as possible',
     description: 'Prioritize the earliest graduation, even if workload spikes.',
+    shortDescription: 'Protect the May 2027 finish.',
   },
   {
     id: 'protect-work-schedule',
-    label: 'Keep my work schedule',
+    label: 'Keep my 20-hour work schedule',
     description: 'Protect my 20 work hours each week and keep a steadier load.',
+    shortDescription: 'Keep every term at 10 credits or fewer.',
   },
   {
     id: 'limit-extra-cost',
     label: 'Limit extra costs',
     description: 'Avoid an added term when the plan makes that possible.',
+    shortDescription: 'Avoid the added-term fee.',
   },
 ]
 

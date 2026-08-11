@@ -3,6 +3,13 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/plan", "destination": "/" },
+    { "source": "/stress-test", "destination": "/" },
+    { "source": "/impact", "destination": "/" },
+    { "source": "/paths", "destination": "/" },
+    { "source": "/advisor", "destination": "/" }
+  ],
   "functions": {
     "api/explain.ts": {
       "maxDuration": 10
