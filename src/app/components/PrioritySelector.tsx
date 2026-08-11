@@ -60,7 +60,7 @@ export function PrioritySelector({
       <div className="protected-summary">
         <h3>
           <ShieldCheck aria-hidden="true" size={18} />
-          This priority protects
+          Recommended path protects
         </h3>
         <ul>
           {presented.protects.map((item) => (

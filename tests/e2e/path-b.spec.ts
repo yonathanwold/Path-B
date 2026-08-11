@@ -32,7 +32,7 @@ test('Maya can compare resilient paths and leave with a specific question', asyn
     }),
   ).toBeVisible()
   await expect(page.getByRole('radio', { name: /I did not pass CS 201/ })).toBeChecked()
-  await expect(page.getByRole('radio', { name: /I lost summer availability/ })).toBeDisabled()
+  await expect(page.getByText('More scenarios in a full version')).toBeVisible()
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
@@ -60,6 +60,9 @@ test('Maya can compare resilient paths and leave with a specific question', asyn
 
   await page.getByRole('radio', { name: /Faster finish/ }).check()
 
+  await expect(page.getByText(/Viewing Faster finish as an alternative/)).toContainText(
+    'Steadier load is recommended',
+  )
   await expect(page.locator('.advisor-question blockquote')).toContainText(
     'still graduate in May 2027',
   )

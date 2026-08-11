@@ -57,15 +57,10 @@ export const ResultsView = forwardRef<HTMLHeadingElement, ResultsViewProps>(
         </section>
 
         <div className="results-overview">
-          <PrioritySelector
-            dataset={dataset}
-            onChange={onPriorityChange}
-            priority={priority}
-            recommendedPath={recommendedPath}
-          />
           <PlanCascade
             activePath={selectedPath}
             dataset={dataset}
+            recommendedPathId={scenario.recommendedPathId}
             scenario={scenario}
           />
           <ImpactStory
@@ -73,6 +68,12 @@ export const ResultsView = forwardRef<HTMLHeadingElement, ResultsViewProps>(
             priority={priority}
             recommendedPath={recommendedPath}
             scenario={scenario}
+          />
+          <PrioritySelector
+            dataset={dataset}
+            onChange={onPriorityChange}
+            priority={priority}
+            recommendedPath={recommendedPath}
           />
         </div>
 

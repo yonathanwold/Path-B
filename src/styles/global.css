@@ -279,6 +279,32 @@ button {
   gap: 10px;
 }
 
+.scenario-scope-note {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px 12px;
+  color: var(--muted);
+  background: var(--field);
+  border-radius: 6px;
+  font-size: 0.66rem;
+  line-height: 1.45;
+  gap: 9px;
+}
+
+.scenario-scope-note svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.scenario-scope-note span {
+  display: grid;
+  gap: 2px;
+}
+
+.scenario-scope-note strong {
+  color: var(--ink);
+}
+
 .choice-row {
   position: relative;
   display: grid;
@@ -783,10 +809,12 @@ button {
 .results-overview {
   display: grid;
   grid-template-columns: minmax(260px, 300px) minmax(620px, 1fr) minmax(210px, 250px);
+  grid-template-areas: 'priority plan impact';
   border-bottom: 1px solid var(--rule);
 }
 
 .priority-selector {
+  grid-area: priority;
   padding: 24px 20px;
   border-right: 1px solid var(--rule);
 }
@@ -836,6 +864,7 @@ button {
 }
 
 .plan-cascade {
+  grid-area: plan;
   min-width: 0;
   padding: 24px clamp(16px, 2vw, 30px) 28px;
 }
@@ -854,6 +883,17 @@ button {
   margin: 0 0 14px;
   color: var(--muted);
   font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.alternative-context {
+  max-width: 800px;
+  padding: 9px 11px;
+  margin: -3px 0 14px;
+  border-left: 3px solid var(--coral-dark);
+  color: var(--ink);
+  background: var(--coral-soft);
+  font-size: 0.66rem;
   line-height: 1.45;
 }
 
@@ -887,6 +927,7 @@ button {
 }
 
 .impact-story {
+  grid-area: impact;
   padding: 24px 18px;
   border-left: 1px solid var(--rule);
 }
@@ -991,6 +1032,34 @@ button {
 .comparison-heading__hint {
   max-width: 320px;
   text-align: right;
+}
+
+.comparison-evidence {
+  padding: 9px 11px;
+  margin: -7px 0 18px;
+  border-left: 3px solid var(--teal);
+  color: var(--muted);
+  background: var(--teal-soft);
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.comparison-evidence a {
+  color: var(--teal-dark);
+  font-weight: 700;
+  text-underline-offset: 2px;
+}
+
+.alternative-notice {
+  padding: 9px 11px;
+  margin: -8px 0 18px;
+  border: 1px solid #e8b3ac;
+  border-radius: 5px;
+  color: var(--coral-dark);
+  background: var(--coral-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 .path-comparison fieldset {
@@ -1308,6 +1377,9 @@ button {
 @media (max-width: 1320px) {
   .results-overview {
     grid-template-columns: 280px minmax(600px, 1fr);
+    grid-template-areas:
+      'priority plan'
+      'impact impact';
   }
 
   .impact-story {
@@ -1410,6 +1482,10 @@ button {
 
   .results-overview {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      'plan'
+      'impact'
+      'priority';
   }
 
   .priority-selector {
@@ -1676,6 +1752,11 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .path-metric--busiest-term,
+  .path-metric--half-time {
+    display: none !important;
+  }
+
   .path-option dl > div,
   .path-option dl > div:nth-child(odd) {
     grid-template-columns: minmax(116px, 0.85fr) minmax(0, 1.15fr);
@@ -1745,8 +1826,8 @@ button {
 
   .path-option dl > div,
   .path-option dl > div:nth-child(odd) {
-    grid-template-columns: 1fr;
-    gap: 4px;
+    grid-template-columns: minmax(96px, 0.8fr) minmax(0, 1.2fr);
+    gap: 8px;
   }
 }
 

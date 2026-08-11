@@ -29,6 +29,15 @@ export function PathComparison({
   selectedPathId,
   onSelect,
 }: PathComparisonProps) {
+  const recommendedPath =
+    scenario.alternatives.find(
+      (path) => path.id === scenario.recommendedPathId,
+    ) ?? scenario.alternatives[0]!
+  const selectedPath =
+    scenario.alternatives.find((path) => path.id === selectedPathId) ??
+    scenario.alternatives[0]!
+  const viewingAlternative = selectedPath.id !== recommendedPath.id
+
   return (
     <section className="path-comparison" aria-labelledby="comparison-title">
       <div className="comparison-heading">
@@ -41,6 +50,19 @@ export function PathComparison({
         </p>
       </div>
 
+      <p className="comparison-evidence">
+        Both modeled paths keep Maya at or above {dataset.student.minimumCreditsPerTerm}{' '}
+        credits. Synthetic demo data; verify course availability, aid, and cost
+        with advising. <a href="#evidence-details">Review assumptions</a>.
+      </p>
+
+      {viewingAlternative ? (
+        <p className="alternative-notice" role="status">
+          Viewing {selectedPath.title} as an alternative. {recommendedPath.title}{' '}
+          is recommended for your selected priority.
+        </p>
+      ) : null}
+
       <fieldset>
         <legend className="sr-only">Choose a recovery path to inspect</legend>
         <div className="path-grid">
@@ -50,31 +72,37 @@ export function PathComparison({
             const recommended = path.id === scenario.recommendedPathId
             const metrics = [
               {
+                id: 'graduation',
                 icon: GraduationCap,
                 label: 'Projected graduation',
                 value: presented.graduation,
               },
               {
+                id: 'busiest-term',
                 icon: Gauge,
                 label: 'Busiest term',
                 value: `${presented.busiestTerm} · ${path.maximumCredits} credits`,
               },
               {
+                id: 'work-fit',
                 icon: BriefcaseBusiness,
                 label: `Work fit (${dataset.student.workHoursPerWeek} hrs/wk)`,
                 value: presented.workFit,
               },
               {
+                id: 'half-time',
                 icon: ShieldCheck,
                 label: 'Half-time assumption',
                 value: presented.halfTime,
               },
               {
+                id: 'cost',
                 icon: CircleDollarSign,
                 label: 'Illustrative added cost',
                 value: presented.additionalCost,
               },
               {
+                id: 'sacrifice',
                 icon: Scale,
                 label: 'One sacrifice',
                 value: presented.sacrifice,
@@ -109,8 +137,8 @@ export function PathComparison({
                 ) : null}
 
                 <dl>
-                  {metrics.map(({ icon: Icon, label, value }) => (
-                    <div key={label}>
+                  {metrics.map(({ id, icon: Icon, label, value }) => (
+                    <div className={`path-metric path-metric--${id}`} key={id}>
                       <dt>
                         <Icon aria-hidden="true" size={16} strokeWidth={1.8} />
                         {label}

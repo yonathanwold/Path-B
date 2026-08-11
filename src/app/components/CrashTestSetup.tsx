@@ -16,7 +16,7 @@ export function CrashTestSetup({ dataset, onRun }: CrashTestSetupProps) {
       <section className="setup-panel" aria-labelledby="setup-title">
         <div className="setup-panel__intro">
           <h1 id="setup-title">Real life changed. Will Maya's plan hold?</h1>
-          <p>Pick what changed so we can see how it impacts her plan.</p>
+          <p>Stress-test one real disruption and see how it impacts her plan.</p>
         </div>
 
         <StudentFacts dataset={dataset} />

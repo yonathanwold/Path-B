@@ -5,11 +5,13 @@ import type {
   PathBDataset,
   ScenarioResult,
 } from '../../domain'
+import { presentPath } from '../../presentation/scenario'
 
 type PlanCascadeProps = {
   dataset: PathBDataset
   scenario: ScenarioResult
   activePath: AlternativePath
+  recommendedPathId: AlternativePath['id']
 }
 
 type RailEvent = {
@@ -22,6 +24,7 @@ export function PlanCascade({
   dataset,
   scenario,
   activePath,
+  recommendedPathId,
 }: PlanCascadeProps) {
   const termsById = new Map(dataset.terms.map((term) => [term.id, term]))
   const courseById = new Map(dataset.courses.map((course) => [course.id, course]))
@@ -58,6 +61,8 @@ export function PlanCascade({
       failed: false,
     })),
   ]
+  const presentedPath = presentPath(dataset, activePath)
+  const viewingAlternative = activePath.id !== recommendedPathId
 
   const eventFor = (
     row: (typeof rows)[number],
@@ -116,6 +121,14 @@ export function PlanCascade({
         2026. Two courses are blocked directly; five planned courses move in the
         selected {activePath.title.toLowerCase()} path.
       </p>
+
+      {viewingAlternative ? (
+        <p className="alternative-context" role="status">
+          <strong>Viewing an alternative:</strong> protects{' '}
+          {presentedPath.protects.join(' and ')}. Its tradeoff is{' '}
+          {presentedPath.sacrifice.toLowerCase()}.
+        </p>
+      ) : null}
 
       <div className="cascade-table-wrap">
         <table

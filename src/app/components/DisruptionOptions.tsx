@@ -3,8 +3,10 @@ import { LockKeyhole } from 'lucide-react'
 export function DisruptionOptions() {
   return (
     <fieldset className="choice-fieldset disruption-options">
-      <legend>What changed?</legend>
-      <p className="fieldset-help">Choose the disruption Maya is facing.</p>
+      <legend>Today's disruption</legend>
+      <p className="fieldset-help">
+        Stress-test Maya's once-yearly prerequisite failure.
+      </p>
 
       <label className="choice-row choice-row--selected">
         <input defaultChecked name="disruption" type="radio" value="CS201" />
@@ -14,29 +16,13 @@ export function DisruptionOptions() {
         </span>
       </label>
 
-      <label className="choice-row choice-row--disabled">
-        <input disabled name="disruption" type="radio" value="summer" />
-        <span className="choice-row__copy">
-          <strong>I lost summer availability</strong>
-          <span>See how this would affect the plan.</span>
+      <div className="scenario-scope-note">
+        <LockKeyhole aria-hidden="true" size={15} />
+        <span>
+          <strong>More scenarios in a full version</strong>
+          Work, summer, and family changes would use the same resilience engine.
         </span>
-        <span className="preview-label">
-          <LockKeyhole aria-hidden="true" size={14} />
-          Preview only
-        </span>
-      </label>
-
-      <label className="choice-row choice-row--disabled">
-        <input disabled name="disruption" type="radio" value="lighter-term" />
-        <span className="choice-row__copy">
-          <strong>I need a lighter term</strong>
-          <span>See how this would affect the plan.</span>
-        </span>
-        <span className="preview-label">
-          <LockKeyhole aria-hidden="true" size={14} />
-          Preview only
-        </span>
-      </label>
+      </div>
     </fieldset>
   )
 }

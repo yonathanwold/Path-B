@@ -9,7 +9,7 @@ type EvidenceDisclosureProps = {
 export function EvidenceDisclosure({ dataset }: EvidenceDisclosureProps) {
   return (
     <section className="evidence-section" aria-label="Fixture data and assumptions">
-      <details>
+      <details id="evidence-details">
         <summary>Fixture data &amp; assumptions</summary>
         <div className="evidence-grid">
           <div>

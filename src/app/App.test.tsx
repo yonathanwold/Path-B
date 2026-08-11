@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
@@ -17,9 +17,10 @@ describe('App', () => {
     expect(
       screen.getByRole('radio', { name: /I did not pass CS 201/ }),
     ).toBeChecked()
+    expect(screen.getByText('More scenarios in a full version')).toBeVisible()
     expect(
-      screen.getByRole('radio', { name: /I lost summer availability/ }),
-    ).toBeDisabled()
+      screen.queryByRole('radio', { name: /I lost summer availability/ }),
+    ).not.toBeInTheDocument()
     expect(screen.getByText(/Synthetic Great Lakes University fixture/)).toBeVisible()
   })
 
@@ -39,7 +40,7 @@ describe('App', () => {
       { timeout: 1500 },
     )
 
-    expect(resultHeading).toHaveFocus()
+    await waitFor(() => expect(resultHeading).toHaveFocus())
     expect(
       screen.getByRole('table', {
         name: 'Faster finish course movement by term',
@@ -101,6 +102,9 @@ describe('App', () => {
     expect(
       screen.getByText(/Spring 2026 alongside CS 302 and CS 340/),
     ).toHaveTextContent('December 2027 graduation')
+    expect(
+      screen.getByText(/Viewing Steadier load as an alternative/),
+    ).toHaveTextContent('Faster finish is recommended')
     expect(screen.getByText(/2 courses are blocked directly/)).toBeVisible()
   })
 
