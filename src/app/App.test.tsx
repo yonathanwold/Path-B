@@ -51,6 +51,20 @@ describe('App', () => {
     )
   })
 
+  it('lets Maya inspect a course and its direct dependencies', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('link', { name: "Review Maya's plan" }))
+    await user.click(screen.getByRole('button', { name: 'CS 301' }))
+
+    expect(
+      screen.getByRole('heading', { name: 'CS 301 Algorithms' }),
+    ).toBeVisible()
+    expect(screen.getByText('CS 201', { selector: 'dd' })).toBeVisible()
+    expect(screen.getByText('CS 450, CS 495', { selector: 'dd' })).toBeVisible()
+  })
+
   it('runs the stress test, persists intent, and focuses the impact', async () => {
     const user = userEvent.setup()
     render(<App />)

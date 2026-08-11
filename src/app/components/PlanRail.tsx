@@ -1,4 +1,10 @@
-import { AlertTriangle, CheckCircle2 } from 'lucide-react'
+import {
+  AlertTriangle,
+  CalendarClock,
+  CheckCircle2,
+  GitBranch,
+} from 'lucide-react'
+import { useState } from 'react'
 
 import type { PathBDataset } from '../../domain/index.ts'
 
@@ -10,12 +16,30 @@ export function PlanRail({
   vulnerableCourseId: string
 }) {
   const courses = new Map(dataset.courses.map((course) => [course.id, course]))
+  const [selectedCourseId, setSelectedCourseId] = useState(vulnerableCourseId)
   const expectedGraduation = dataset.terms.find(
     (term) => term.id === dataset.baselinePlan.expectedGraduationTermId,
   )
   const terms = dataset.terms
     .filter((term) => term.order <= (expectedGraduation?.order ?? 0))
     .toSorted((left, right) => left.order - right.order)
+  const selectedCourse = courses.get(selectedCourseId)
+  const selectedEntry = dataset.baselinePlan.entries.find(
+    (entry) => entry.courseId === selectedCourseId,
+  )
+  const selectedTerm = dataset.terms.find(
+    (term) => term.id === selectedEntry?.termId,
+  )
+  const prerequisites = (selectedCourse?.prerequisites ?? []).map(
+    (courseId) => courses.get(courseId)?.code ?? courseId,
+  )
+  const unlocks = dataset.courses
+    .filter((course) => course.prerequisites.includes(selectedCourseId))
+    .map((course) => course.code)
+  const offeringLabel = selectedCourse?.offeredIn
+    .map((season) => season.charAt(0).toUpperCase() + season.slice(1))
+    .join(' and ')
+  const selectedIsVulnerable = selectedCourseId === vulnerableCourseId
 
   return (
     <section className="plan-rail" aria-labelledby="plan-rail-title">
@@ -52,16 +76,28 @@ export function PlanRail({
                   const vulnerable = entry.courseId === vulnerableCourseId
                   return (
                     <li
-                      className={vulnerable ? 'course-line course-line--vulnerable' : 'course-line'}
+                      className={[
+                        'course-line',
+                        vulnerable ? 'course-line--vulnerable' : '',
+                        selectedCourseId === entry.courseId
+                          ? 'course-line--selected'
+                          : '',
+                      ].filter(Boolean).join(' ')}
                       key={entry.courseId}
                     >
-                      <code>{course?.code ?? entry.courseId}</code>
-                      {vulnerable ? (
-                        <span>
-                          <AlertTriangle aria-hidden="true" size={13} />
-                          Vulnerable hinge
-                        </span>
-                      ) : null}
+                      <button
+                        aria-pressed={selectedCourseId === entry.courseId}
+                        onClick={() => setSelectedCourseId(entry.courseId)}
+                        type="button"
+                      >
+                        <code>{course?.code ?? entry.courseId}</code>
+                        {vulnerable ? (
+                          <span>
+                            <AlertTriangle aria-hidden="true" size={13} />
+                            Vulnerable hinge
+                          </span>
+                        ) : null}
+                      </button>
                     </li>
                   )
                 })}
@@ -70,6 +106,46 @@ export function PlanRail({
           )
         })}
       </div>
+
+      <section
+        aria-labelledby="course-inspector-title"
+        className="course-inspector"
+      >
+        <div className="course-inspector__title">
+          <span className="eyebrow">Selected course</span>
+          <h3 id="course-inspector-title">
+            {selectedCourse?.code}{' '}
+            <span>{selectedCourse?.title}</span>
+          </h3>
+          <p>
+            {selectedCourse?.credits} credits · {selectedTerm?.label} · Offered{' '}
+            {offeringLabel}
+          </p>
+        </div>
+        <dl>
+          <div>
+            <dt><CalendarClock aria-hidden="true" size={17} /> Prerequisites</dt>
+            <dd>{prerequisites.length > 0 ? prerequisites.join(', ') : 'None in this plan'}</dd>
+          </div>
+          <div>
+            <dt><GitBranch aria-hidden="true" size={17} /> Directly unlocks</dt>
+            <dd>{unlocks.length > 0 ? unlocks.join(', ') : 'No later course directly'}</dd>
+          </div>
+          <div>
+            <dt><AlertTriangle aria-hidden="true" size={17} /> Why it matters</dt>
+            <dd>
+              {selectedIsVulnerable
+                ? 'Spring-only timing makes this the plan’s vulnerable hinge.'
+                : unlocks.length > 0
+                  ? `It unlocks ${unlocks.length} later ${unlocks.length === 1 ? 'course' : 'courses'}.`
+                  : 'It completes part of Maya’s baseline degree plan.'}
+            </dd>
+          </div>
+        </dl>
+        <p aria-live="polite" className="sr-only" role="status">
+          {selectedCourse?.code} details opened.
+        </p>
+      </section>
     </section>
   )
 }
