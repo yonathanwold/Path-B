@@ -345,9 +345,14 @@ export type ScheduleIssue = {
   code:
     | 'below-half-time'
     | 'credit-mismatch'
+    | 'duplicate-course'
+    | 'duplicate-term'
+    | 'missing-course'
     | 'over-credit-cap'
     | 'prerequisite-order'
     | 'course-unavailable'
+    | 'term-order'
+    | 'unexpected-course'
     | 'unknown-course'
     | 'unknown-term'
   message: string

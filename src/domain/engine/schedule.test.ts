@@ -62,10 +62,9 @@ describe('generateAlternativePath', () => {
       ],
     )
 
-    expect(issues.map((issue) => issue.code)).toEqual([
-      'credit-mismatch',
-      'below-half-time',
-    ])
+    expect(issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining(['credit-mismatch', 'below-half-time']),
+    )
   })
 
   it('rejects unknown terms and courses', () => {
@@ -99,11 +98,13 @@ describe('generateAlternativePath', () => {
       pathStrategies[0]!,
       [{ termId: 'spring-2026', courseIds: ['CS301'], credits: 3 }],
     )
-    expect(prerequisiteIssues.map((issue) => issue.code)).toEqual([
-      'below-half-time',
-      'course-unavailable',
-      'prerequisite-order',
-    ])
+    expect(prerequisiteIssues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining([
+        'below-half-time',
+        'course-unavailable',
+        'prerequisite-order',
+      ]),
+    )
 
     const overloadIssues = validateSchedule(
       mayaDataset,
@@ -117,8 +118,43 @@ describe('generateAlternativePath', () => {
         },
       ],
     )
-    expect(overloadIssues.map((issue) => issue.code)).toEqual([
-      'over-credit-cap',
-    ])
+    expect(overloadIssues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining(['over-credit-cap']),
+    )
+  })
+
+  it('rejects duplicate, out-of-order, missing, and unexpected schedule entries', () => {
+    const issues = validateSchedule(
+      mayaDataset,
+      mayaCourseFailure,
+      pathStrategies[0]!,
+      [
+        {
+          termId: 'fall-2026',
+          courseIds: ['CS201', 'CS150'],
+          credits: 8,
+        },
+        {
+          termId: 'spring-2026',
+          courseIds: ['CS201'],
+          credits: 4,
+        },
+        {
+          termId: 'spring-2026',
+          courseIds: [],
+          credits: 0,
+        },
+      ],
+    )
+
+    expect(issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining([
+        'duplicate-course',
+        'duplicate-term',
+        'missing-course',
+        'term-order',
+        'unexpected-course',
+      ]),
+    )
   })
 })

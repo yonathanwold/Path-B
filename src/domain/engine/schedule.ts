@@ -132,6 +132,18 @@ export function validateSchedule(
 ): ScheduleIssue[] {
   const courses = courseById(dataset)
   const terms = termById(dataset)
+  const disruptionOrder = terms.get(disruption.termId)?.order ?? -1
+  const expectedCourseIds = new Set(
+    dataset.baselinePlan.entries
+      .filter((entry) => {
+        const baselineOrder = terms.get(entry.termId)?.order ?? -1
+        return (
+          entry.courseId === disruption.courseId ||
+          baselineOrder > disruptionOrder
+        )
+      })
+      .map((entry) => entry.courseId),
+  )
   const completed = new Set(
     dataset.baselinePlan.entries
       .filter(
@@ -144,10 +156,44 @@ export function validateSchedule(
       .map((entry) => entry.courseId),
   )
   const issues: ScheduleIssue[] = []
+  const scheduledCourseIds = new Set<string>()
+  const scheduledTermIds = new Set<string>()
+  let previousTermOrder = disruptionOrder
 
   schedule.forEach((scheduledTerm) => {
     const term = terms.get(scheduledTerm.termId)
+    if (scheduledTermIds.has(scheduledTerm.termId)) {
+      issues.push({
+        code: 'duplicate-term',
+        message: `Scheduled term appears more than once: ${scheduledTerm.termId}.`,
+      })
+    }
+    scheduledTermIds.add(scheduledTerm.termId)
+
+    if (term && term.order <= previousTermOrder) {
+      issues.push({
+        code: 'term-order',
+        message: `${term.label} is not after the prior scheduled term and disruption.`,
+      })
+    }
+    if (term) previousTermOrder = Math.max(previousTermOrder, term.order)
+
     const scheduledCourses = scheduledTerm.courseIds.flatMap((courseId) => {
+      if (scheduledCourseIds.has(courseId)) {
+        issues.push({
+          code: 'duplicate-course',
+          message: `Course is scheduled more than once: ${courseId}.`,
+        })
+      }
+      scheduledCourseIds.add(courseId)
+
+      if (!expectedCourseIds.has(courseId)) {
+        issues.push({
+          code: 'unexpected-course',
+          message: `Course is outside the remaining baseline plan: ${courseId}.`,
+        })
+      }
+
       const course = courses.get(courseId)
       if (!course) {
         issues.push({
@@ -210,6 +256,15 @@ export function validateSchedule(
     scheduledCourses.forEach((course) => completed.add(course.id))
   })
 
+  expectedCourseIds.forEach((courseId) => {
+    if (!scheduledCourseIds.has(courseId)) {
+      issues.push({
+        code: 'missing-course',
+        message: `Remaining baseline course was not scheduled: ${courseId}.`,
+      })
+    }
+  })
+
   return issues
 }
 
@@ -250,6 +305,11 @@ export function generateAlternativePath(
   const schedule = scheduleRemainingCourses(dataset, disruption, strategy)
   const issues = validateSchedule(dataset, disruption, strategy, schedule)
   const lastTerm = schedule.at(-1)
+
+  if (!lastTerm) {
+    throw new Error(`The ${strategy.id} strategy produced an empty schedule.`)
+  }
+
   const busiestTerm = schedule.reduce((current, candidate) =>
     candidate.credits > current.credits ? candidate : current,
   )
@@ -265,10 +325,6 @@ export function generateAlternativePath(
     (repeatedCourse?.credits ?? 0) * dataset.costModel.tuitionPerCredit +
     additionalTerms * dataset.costModel.enrollmentFeePerTerm
   const measurements = measurePath(dataset, strategy, schedule)
-
-  if (!lastTerm) {
-    throw new Error(`The ${strategy.id} strategy produced an empty schedule.`)
-  }
 
   return {
     id: strategy.id,
