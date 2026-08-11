@@ -53,6 +53,10 @@ web_modules/
 # Optional eslint cache
 .eslintcache
 
+# Browser test artifacts
+playwright-report/
+test-results/
+
 # Optional stylelint cache
 .stylelintcache
 
