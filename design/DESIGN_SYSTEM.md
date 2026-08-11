@@ -1,84 +1,91 @@
-# Path B design contract
+# Path B v2 design contract
 
-The primary agent accepted this concept set under the repository's autonomous-build instruction:
+This contract replaces the earlier single-page concept. Path B is now a routed student decision journey, while the deterministic planning engine remains the only authority for course facts, timing, costs, eligibility, and recommendations.
 
-- `concepts/path-b-initial-desktop.png` — pre-crash state
-- `concepts/path-b-results-desktop.png` — complete result and comparison state
-- `concepts/path-b-results-mobile.png` — mobile sibling state
+## Accepted concepts
 
-## Story and visual artifact
+- `concepts/path-b-v2-impact-desktop.png` — the signature impact route
+- `concepts/path-b-v2-impact-mobile.png` — the vertical mobile cascade
+- `concepts/path-b-v2-paths-desktop.png` — the priority and recovery-path decision
 
-- **Question:** If Maya does not pass a once-yearly prerequisite, what changes and which viable path best protects what matters to her?
-- **Insight title:** Maya's plan hit a fault line.
-- **Artifact:** an explanatory term rail plus a small directed prerequisite dependency view, followed by a precise two-path comparison.
-- **Immediate evidence:** CS 201 fails, two courses are directly blocked, five planned courses shift downstream, and the projected sequence changes.
-- **On-demand detail:** course facts, assumptions, sources, calculation notes, and AI/fallback explanation.
-- **Annotation:** direct labels explain fault, cause, effect, ripple, and protected priority. Essential values never live only in a tooltip.
+The concepts are layout references, not data sources. Course placements, credits, dates, costs, and labels must be derived from the typed fixture and engine. Generated visual microcopy may not override deterministic results.
 
-## Locked experience
+## Student story and information architecture
 
-The implementation keeps these elements from the concepts:
+The two-minute path is:
 
-- A simple Path B header with the subtitle and one contextual action.
-- An editorial opening statement paired with Maya's constraints.
-- Open term rails and thin dependency lines instead of a dashboard-card grid.
-- Coral for disrupted/blocked, deep teal for protected/viable, and ink/slate for factual structure.
-- Pattern, icon, line style, and text labels in addition to color.
-- Exactly two recovery paths in the main comparison.
-- One practical advisor question and one compact assumptions/source disclosure.
-- Desktop and mobile as sibling layouts, not a squeezed fixed-width chart.
+1. `/` Overview — understand why resilience planning matters and meet Maya.
+2. `/plan` My Plan — verify that the baseline plan is viable and see the vulnerable hinge.
+3. `/stress-test` Stress Test — choose the CS 201 disruption and run the model.
+4. `/impact` Impact — understand the failure, next offering, direct blocks, and downstream movement.
+5. `/paths` Paths — choose what to protect and compare two viable tradeoffs.
+6. `/advisor` Advisor — turn verified facts into a meeting brief and one useful question.
 
-The concepts are visual references, not shipped UI images. All product text, controls, course data, marks, and state remain code-native.
+Each route answers one question and has one primary action. The current route lives in the URL. Validated demo choices live in session storage so refresh and browser history preserve continuity; the full scenario is always recalculated from deterministic inputs.
 
-## Design tokens
+## Signature artifact
+
+- **Question:** If Maya does not pass a once-yearly prerequisite, what moves, and which viable recovery protects what matters to her?
+- **Immediate statement:** `CS 201 failed → next offered Spring 2026 → 2 direct blocks → 5 planned courses move`.
+- **Desktop visual:** a semester rail with directly labeled old and new placements plus thin causal connectors.
+- **Mobile visual:** a vertical chronological cascade; never a horizontally compressed table.
+- **Text alternative:** a concise ordered explanation and a semantic movement list using the same engine data.
+- **Motion:** a short CSS-only staged reveal of the fault and downstream shifts. Reduced motion renders the final state immediately.
+
+## Shell and hierarchy
+
+- Desktop uses a 232px navigation rail and a quiet working canvas.
+- Mobile uses a compact header plus native modal navigation; it does not collapse into unlabeled icons.
+- Navigation includes only Overview, My Plan, Stress Test, Impact, Paths, and Advisor.
+- A small scenario block identifies Maya, the CS 201 failure, and the synthetic fixture.
+- The top bar provides breadcrumbs, step progress, and a restrained reset action.
+- One page title, one primary action, and one focal artifact per route.
+- Assumptions and source detail stay contextual and secondary.
+
+## Visual language
 
 | Role | Token | Value |
 | --- | --- | --- |
-| Canvas | `--canvas` | `#ffffff` |
+| Canvas | `--canvas` | `#fbfbf8` |
+| Surface | `--surface` | `#ffffff` |
 | Ink | `--ink` | `#17212b` |
 | Muted ink | `--muted` | `#5c6875` |
-| Rule | `--rule` | `#ccd5dc` |
-| Soft field | `--field` | `#f2f6f7` |
+| Rule | `--rule` | `#d5dddf` |
+| Soft field | `--field` | `#eef3f2` |
 | Protected / viable | `--teal` | `#087b83` |
-| Protected tint | `--teal-soft` | `#e7f4f4` |
-| Disrupted / blocked | `--coral` | `#f06455` |
+| Protected tint | `--teal-soft` | `#e8f3f2` |
+| Disrupted / blocked | `--coral` | `#e45b4f` |
 | Disrupted tint | `--coral-soft` | `#fff0ed` |
 | Focus | `--focus` | `#005fcc` |
 
-- Display type: Newsreader, editorial serif fallback.
-- UI type: Inter, system sans-serif fallback.
+- Display type: Newsreader for page titles and major decisions only.
+- UI type: Inter and system sans-serif fallbacks.
 - Course codes: compact monospaced system stack.
-- Geometry: 2px controls, 8-10px functional radii, thin rules, almost no elevation.
-- Motion: a short staged cascade reveal and state transition only; reduced motion renders the final state immediately.
+- Body text: 15–16px minimum; no compressed 9–12px interface copy.
+- Geometry: one 10–12px radius family, thin rules, almost no elevation.
+- Color is redundant with icons, text, line style, and pattern.
+- No gradients, glass, glow, photos, chat bubbles, generic dashboard metrics, or decorative card grids.
 
-## Component and ownership model
+## Component and state ownership
 
-React owns the app state, form controls, semantic structure, result selection, disclosures, and deterministic summaries. The visualization component owns only the small fixed graph's geometry and connector rendering. No chart library is needed.
+React owns routing, semantic structure, controls, validated session state, focus, disclosures, and all student-facing summaries. The deterministic engine owns scenario propagation and path calculation. Visualization components own only presentation geometry.
 
-- `AppShell`: header, main landmark, live status, reset.
-- `CrashTestSetup`: Maya context, disruption fieldset, run action.
-- `BaselinePlan`: pre-crash dependency rail and vulnerability annotation.
-- `ImpactStory`: fault/cause/effect/ripple/protected-priority sequence.
-- `PlanCascade`: accessible term/course view with an SVG connector layer on desktop and stacked causal rows on mobile.
-- `PrioritySelector`: radio group with explanatory consequences.
-- `PathComparison`: two path choices with the same row schema and direct tradeoff labels.
-- `AdvisorHandoff`: deterministic or validated Claude explanation, advisor question, and copy action.
-- `EvidenceDisclosure`: fixture label, facts, assumptions, sources, and calculation notes.
+- `App`: route normalization, popstate handling, scenario state, persistence, calculation failure boundary.
+- `AppShell`: navigation, breadcrumbs, progress, mobile dialog, reset.
+- Route pages: one clear question and action each.
+- `ImpactCascade`: desktop semester rail, mobile timeline, and text alternative derived from `ScenarioResult`.
+- `PathDecision`: priority and path controls, three aligned comparison rows, term previews, protected outcome, and sacrifice.
+- `AdvisorBrief`: validated Claude wording or deterministic fallback, assumptions to verify, and copy action.
 
-Only one visualization instance is present. Data size is fixed and tiny, so layout is deterministic, render cost is negligible, and server rendering is unnecessary. All view state is intentionally ephemeral; reset returns to the known demo state. There is no persistence or URL state in this submission.
+Claude is called only on the Advisor route. It may choose emphasis and wording from verified facts; it never alters requirements or calculations.
 
-## Accessible path
+## Responsive and accessible behavior
 
-- Every graphical dependency also appears in a structured list or table-like term sequence.
-- Status is encoded with text, icons, borders/patterns, and line style as well as color.
-- All controls use native buttons, radio inputs, and disclosure elements with 44px touch targets.
-- A concise visualization description names the failure, three dependent courses, timing consequence, and caveat.
-- Keyboard order follows setup, result, priority, comparison, advisor handoff, then evidence.
-- Focus is never hidden after state changes; the result heading receives programmatic focus after the crash test runs.
-- At 720px and below, terms stack vertically, comparisons become full-width sections, and no horizontal scrolling is required.
-- The mobile landscape layout uses the desktop rail only when at least 700px of inline space exists; otherwise it keeps the portrait stack.
-- There are no drag, pinch, hover-only, autoplay, or pointer-precision interactions.
-
-## Visible-copy allowance
-
-Above the fold may contain only the Path B identity, the accepted state headline, one short explanatory sentence, Maya's concise facts, the disruption or priority choices for that state, plan labels, the fixture disclosure, and the primary action. New marketing claims, AI labels, metrics, decorative badges, or navigation are out of scope.
+- Route changes move focus to the page heading and start at the top.
+- Navigation exposes `aria-current="page"`; the mobile menu uses native dialog behavior, Escape, and focus restoration.
+- All controls are native buttons, anchors, radios, and disclosures with at least 44px targets.
+- The impact visual has an ordered text alternative and does not depend on hover or tooltips.
+- Desktop and mobile use sibling layouts with no horizontal page scrolling.
+- Updates announce only meaningful calculation or copy outcomes, not every visual animation step.
+- Empty scenario, calculation failure, AI unavailable, and malformed-AI states retain a useful deterministic next action.
+- `prefers-reduced-motion`, 200% zoom, keyboard-only navigation, and narrow portrait layouts are first-class acceptance cases.

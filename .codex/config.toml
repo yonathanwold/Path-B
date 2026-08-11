@@ -1,0 +1,14 @@
+# Path B project-scoped Codex configuration.
+# Project .codex layers load only after the repository is trusted.
+
+model = "gpt-5.6-sol"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "cached"
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
+default_subagent_model = "gpt-5.6-luna"
+default_subagent_reasoning_effort = "medium"
+interrupt_message = false
