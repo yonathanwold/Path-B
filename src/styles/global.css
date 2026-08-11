@@ -1,0 +1,142 @@
+:root {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #17212b;
+  background: #ffffff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --canvas: #ffffff;
+  --ink: #17212b;
+  --muted: #5c6875;
+  --rule: #ccd5dc;
+  --field: #f2f6f7;
+  --teal: #087b83;
+  --teal-soft: #e7f4f4;
+  --coral: #f06455;
+  --coral-soft: #fff0ed;
+  --focus: #005fcc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--canvas);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--rule);
+  gap: 24px;
+}
+
+.site-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.wordmark {
+  padding-right: 24px;
+  border-right: 1px solid var(--rule);
+  color: var(--teal);
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.foundation-view {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: clamp(64px, 12vw, 144px) 32px;
+}
+
+.foundation-view__context {
+  color: var(--teal);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.foundation-view h1 {
+  max-width: 760px;
+  margin: 12px 0 20px;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: clamp(3rem, 7vw, 5.75rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
+}
+
+.foundation-view > p:last-child {
+  max-width: 660px;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1.65;
+}
+
+@media (max-width: 640px) {
+  .site-header {
+    min-height: 64px;
+    padding: 0 20px;
+    gap: 16px;
+  }
+
+  .site-header p {
+    font-size: 0.75rem;
+  }
+
+  .wordmark {
+    padding-right: 16px;
+    font-size: 1.7rem;
+  }
+
+  .foundation-view {
+    padding: 72px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
