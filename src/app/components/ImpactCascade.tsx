@@ -1,5 +1,4 @@
 import { ArrowRight, CircleX, RotateCcw } from 'lucide-react'
-import type { CSSProperties } from 'react'
 
 import type {
   AlternativePath,
@@ -13,6 +12,22 @@ type Movement = {
   depth: number
   movedTermId: string
   type: 'failed' | 'affected'
+}
+
+const movementDelayClasses = [
+  'course-row--delay-0',
+  'course-row--delay-1',
+  'course-row--delay-2',
+  'course-row--delay-3',
+  'course-row--delay-4',
+  'course-row--delay-5',
+] as const
+
+function movementDelayClass(index: number) {
+  return (
+    movementDelayClasses[Math.min(index, movementDelayClasses.length - 1)] ??
+    movementDelayClasses[0]
+  )
 }
 
 export function ImpactCascade({
@@ -122,9 +137,8 @@ export function ImpactCascade({
                 const course = courseById.get(movement.courseId)
                 return (
                   <tr
-                    className={`cascade-depth-${movement.depth}`}
+                    className={`cascade-depth-${movement.depth} ${movementDelayClass(movementIndex)}`}
                     key={movement.courseId}
-                    style={{ '--row-delay': `${movementIndex * 80}ms` } as CSSProperties}
                   >
                     <th scope="row">
                       <code>{course?.code ?? movement.courseId}</code>

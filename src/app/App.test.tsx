@@ -78,6 +78,11 @@ describe('App', () => {
       }),
     ).toBeVisible()
     expect(screen.getByText('2 courses', { selector: 'dd' })).toBeVisible()
+    const progressFill = document.querySelector('.mobile-progress__fill')
+    const delayedCourseRow = document.querySelector('.course-row--delay-1')
+    expect(progressFill).toHaveClass('mobile-progress__fill--4')
+    expect(progressFill).not.toHaveAttribute('style')
+    expect(delayedCourseRow).not.toHaveAttribute('style')
     expect(JSON.parse(window.sessionStorage.getItem(scenarioSessionKey) ?? '{}')).toMatchObject({
       version: 1,
       scenarioId: 'maya-cs201-failure',

@@ -33,7 +33,7 @@ export function StressTestPage({
         <span className="eyebrow">Stress Test</span>
         <h1 data-route-heading tabIndex={-1}>What changed?</h1>
         <p className="page-lede">
-          Choose one real disruption. Path B keeps the academic rules fixed and
+          Review this real disruption. Path B keeps the academic rules fixed and
           recalculates what moves around them.
         </p>
       </header>

@@ -207,7 +207,7 @@ export function AppShell({
             <span>
               {currentIndex + 1} of {navItems.length} <b>•</b> {current.label}
             </span>
-            <i style={{ width: `${((currentIndex + 1) / navItems.length) * 100}%` }} />
+            <i className={`mobile-progress__fill mobile-progress__fill--${currentIndex + 1}`} />
           </div>
         ) : null}
 

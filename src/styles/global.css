@@ -1200,6 +1200,26 @@ h3 {
   animation-delay: var(--row-delay, 0ms);
 }
 
+.course-row--delay-1 {
+  --row-delay: 80ms;
+}
+
+.course-row--delay-2 {
+  --row-delay: 160ms;
+}
+
+.course-row--delay-3 {
+  --row-delay: 240ms;
+}
+
+.course-row--delay-4 {
+  --row-delay: 320ms;
+}
+
+.course-row--delay-5 {
+  --row-delay: 400ms;
+}
+
 .course-event--failed {
   border: 1px solid var(--coral);
   color: var(--coral-dark);
@@ -2057,6 +2077,30 @@ h3 {
     grid-area: 2 / 1;
     border-radius: 4px;
     background: var(--teal);
+  }
+
+  .mobile-progress__fill--1 {
+    width: 16.6667%;
+  }
+
+  .mobile-progress__fill--2 {
+    width: 33.3333%;
+  }
+
+  .mobile-progress__fill--3 {
+    width: 50%;
+  }
+
+  .mobile-progress__fill--4 {
+    width: 66.6667%;
+  }
+
+  .mobile-progress__fill--5 {
+    width: 83.3333%;
+  }
+
+  .mobile-progress__fill--6 {
+    width: 100%;
   }
 
   .mobile-menu[open] {
