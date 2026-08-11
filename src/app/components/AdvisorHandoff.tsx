@@ -1,46 +1,73 @@
 import { Check, Clipboard, MessageCircleQuestion } from 'lucide-react'
 import { useState } from 'react'
 
-import type {
-  AlternativePath,
-  PathBDataset,
-  ScenarioResult,
-} from '../../domain'
-import { buildDeterministicExplanation } from '../../presentation/scenario'
+import type { ExplanationViewState } from '../../ai/useExplanation'
 
 type AdvisorHandoffProps = {
-  dataset: PathBDataset
-  scenario: ScenarioResult
-  selectedPath: AlternativePath
+  explanationState: ExplanationViewState
 }
 
-export function AdvisorHandoff({
-  dataset,
-  scenario,
-  selectedPath,
-}: AdvisorHandoffProps) {
-  const explanation = buildDeterministicExplanation(
-    dataset,
-    scenario,
-    selectedPath,
-  )
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
+export function AdvisorHandoff({ explanationState }: AdvisorHandoffProps) {
+  const { explanation, status } = explanationState
+  const [copyResult, setCopyResult] = useState<{
+    question: string
+    status: 'copied' | 'failed'
+  } | null>(null)
+  const copyState =
+    copyResult?.question === explanation.advisorQuestion
+      ? copyResult.status
+      : 'idle'
+
+  const sourceLabel =
+    status === 'claude'
+      ? 'Claude-assisted explanation'
+      : status === 'deterministic'
+        ? 'Deterministic demo explanation'
+        : status === 'unavailable'
+          ? 'Verified fallback explanation'
+          : 'Verified plan explanation'
+  const explanationStatus =
+    status === 'claude'
+      ? 'Claude phrased this summary from the fixed plan facts above.'
+      : status === 'deterministic'
+        ? 'Claude is optional; this verified fallback uses the same plan facts.'
+        : status === 'unavailable'
+          ? 'Personalized wording is unavailable; showing the verified fallback.'
+          : 'Personalizing the wording without changing plan facts.'
 
   async function copyQuestion() {
     try {
       await navigator.clipboard.writeText(explanation.advisorQuestion)
-      setCopyState('copied')
+      setCopyResult({
+        question: explanation.advisorQuestion,
+        status: 'copied',
+      })
     } catch {
-      setCopyState('failed')
+      setCopyResult({
+        question: explanation.advisorQuestion,
+        status: 'failed',
+      })
     }
   }
 
   return (
     <section className="advisor-handoff" aria-labelledby="advisor-title">
       <div className="advisor-handoff__explanation">
-        <p className="explanation-source">Deterministic scenario explanation</p>
+        <p className="explanation-source">{sourceLabel}</p>
         <p>{explanation.summary}</p>
         <p>{explanation.tradeoff}</p>
+        <p className="explanation-status" role="status" aria-live="polite">
+          {explanationStatus}
+        </p>
+      </div>
+
+      <div className="handoff-actions">
+        <h3>Before the meeting</h3>
+        <ol>
+          {explanation.nextSteps.map((nextStep) => (
+            <li key={nextStep}>{nextStep}</li>
+          ))}
+        </ol>
       </div>
 
       <div className="advisor-question">

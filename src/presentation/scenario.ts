@@ -3,7 +3,7 @@ import type {
   PathBDataset,
   Priority,
   ScenarioResult,
-} from '../domain'
+} from '../domain/index.ts'
 
 export type PresentedPath = {
   id: AlternativePath['id']

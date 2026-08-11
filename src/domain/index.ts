@@ -1,16 +1,16 @@
-export { analyzeCourseFailure } from './engine/analyze'
-export { tracePrerequisiteCascade } from './engine/cascade'
+export { analyzeCourseFailure } from './engine/analyze.ts'
+export { tracePrerequisiteCascade } from './engine/cascade.ts'
 export {
   generateAlternativePath,
   pathStrategies,
   validateSchedule,
-} from './engine/schedule'
-export { mayaCourseFailure, mayaDataset } from './fixtures/maya'
+} from './engine/schedule.ts'
+export { mayaCourseFailure, mayaDataset } from './fixtures/maya.ts'
 export {
   CourseFailureDisruptionSchema,
   PathBDatasetSchema,
   PrioritySchema,
-} from './model'
+} from './model.ts'
 export type {
   AffectedCourse,
   AlternativePath,
@@ -20,4 +20,4 @@ export type {
   Priority,
   ScenarioResult,
   ScheduledTerm,
-} from './model'
+} from './model.ts'

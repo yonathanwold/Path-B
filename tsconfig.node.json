@@ -14,5 +14,11 @@
     "noUncheckedIndexedAccess": true,
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "vitest.setup.ts", "api", "server"]
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "api",
+    "server"
+  ]
 }

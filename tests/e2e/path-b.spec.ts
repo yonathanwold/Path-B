@@ -46,6 +46,11 @@ test('Maya can compare resilient paths and leave with a specific question', asyn
   })
   await expect(resultHeading).toBeFocused()
   await expectActivePlan(page, 'Faster finish')
+  await expect(page.getByText('Deterministic demo explanation')).toBeVisible()
+  await expect(
+    page.getByText('Claude is optional; this verified fallback uses the same plan facts.'),
+  ).toBeVisible()
+  await expect(page.getByText('Before the meeting')).toBeVisible()
 
   await page.getByRole('radio', { name: /Keep my work schedule/ }).check()
 

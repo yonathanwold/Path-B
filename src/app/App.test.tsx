@@ -1,10 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from './App'
 
 describe('App', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    )
+  })
+
+  afterEach(() => vi.unstubAllGlobals())
+
   it('introduces the crash-test story', () => {
     render(<App />)
 
@@ -49,6 +58,10 @@ describe('App', () => {
     expect(screen.getByText('Recommended for this priority')).toBeVisible()
     expect(
       screen.getByRole('heading', { name: 'One question to ask your advisor' }),
+    ).toBeVisible()
+    expect(screen.getByText('Before the meeting')).toBeVisible()
+    expect(
+      screen.getByText('Personalizing the wording without changing plan facts.'),
     ).toBeVisible()
   })
 

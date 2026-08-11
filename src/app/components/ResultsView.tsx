@@ -6,6 +6,7 @@ import type {
   Priority,
   ScenarioResult,
 } from '../../domain'
+import { useExplanation } from '../../ai/useExplanation'
 import { StudentFacts } from './StudentFacts'
 import { PrioritySelector } from './PrioritySelector'
 import { PlanCascade } from './PlanCascade'
@@ -42,6 +43,12 @@ export const ResultsView = forwardRef<HTMLHeadingElement, ResultsViewProps>(
       scenario.alternatives.find(
         (path) => path.id === scenario.recommendedPathId,
       ) ?? scenario.alternatives[0]!
+    const explanationState = useExplanation({
+      dataset,
+      priority,
+      scenario,
+      selectedPath,
+    })
 
     return (
       <main id="main" className="results-view">
@@ -84,11 +91,7 @@ export const ResultsView = forwardRef<HTMLHeadingElement, ResultsViewProps>(
           selectedPathId={selectedPathId}
         />
         <div className="handoff-grid">
-          <AdvisorHandoff
-            dataset={dataset}
-            scenario={scenario}
-            selectedPath={selectedPath}
-          />
+          <AdvisorHandoff explanationState={explanationState} />
           <EvidenceDisclosure dataset={dataset} />
         </div>
       </main>

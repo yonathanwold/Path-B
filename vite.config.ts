@@ -1,14 +1,21 @@
 import react from '@vitejs/plugin-react'
-import { configDefaults, defineConfig } from 'vitest/config'
+import { defineConfig, loadEnv } from 'vite'
 
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    exclude: [...configDefaults.exclude, 'tests/e2e/**'],
-    environment: 'happy-dom',
-    setupFiles: './vitest.setup.ts',
-    coverage: {
-      reporter: ['text', 'html'],
-    },
-  },
+import { explanationDevApi } from './server/devApiPlugin.ts'
+
+export default defineConfig(({ command, mode }) => {
+  const serverEnv =
+    command === 'serve' ? loadEnv(mode, process.cwd(), 'ANTHROPIC_') : {}
+
+  return {
+    plugins: [
+      react(),
+      command === 'serve'
+        ? explanationDevApi({
+            apiKey: serverEnv.ANTHROPIC_API_KEY ?? '',
+            model: serverEnv.ANTHROPIC_MODEL ?? 'claude-sonnet-5',
+          })
+        : null,
+    ],
+  }
 })

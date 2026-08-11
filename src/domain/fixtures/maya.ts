@@ -1,4 +1,4 @@
-import { PathBDatasetSchema } from '../model'
+import { PathBDatasetSchema } from '../model.ts'
 
 export const mayaDataset = PathBDatasetSchema.parse({
   institutionLabel: 'Synthetic Great Lakes University',

@@ -1,5 +1,5 @@
-import { tracePrerequisiteCascade } from './cascade'
-import { generateAlternativePath, pathStrategies } from './schedule'
+import { tracePrerequisiteCascade } from './cascade.ts'
+import { generateAlternativePath, pathStrategies } from './schedule.ts'
 import {
   CourseFailureDisruptionSchema,
   PrioritySchema,
@@ -8,7 +8,7 @@ import {
   type PathBDataset,
   type Priority,
   type ScenarioResult,
-} from '../model'
+} from '../model.ts'
 
 const recommendationByPriority: Record<Priority, AlternativePath['id']> = {
   'graduate-on-time': 'faster-finish',

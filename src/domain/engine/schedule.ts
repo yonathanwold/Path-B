@@ -6,7 +6,7 @@ import type {
   PathStrategy,
   ScheduleIssue,
   ScheduledTerm,
-} from '../model'
+} from '../model.ts'
 
 export const pathStrategies: PathStrategy[] = [
   {

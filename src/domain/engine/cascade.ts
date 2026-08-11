@@ -1,7 +1,7 @@
 import type {
   CourseFailureDisruption,
   PathBDataset,
-} from '../model'
+} from '../model.ts'
 
 export type CascadeNode = {
   courseId: string
