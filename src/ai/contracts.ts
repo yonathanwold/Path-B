@@ -14,6 +14,41 @@ export const ExplanationRequestSchema = z
   })
   .strict()
 
+export const ClaudeNarrativePlanSchema = z
+  .object({
+    summaryFocus: z.enum([
+      'recovery-window',
+      'dependency-cascade',
+      'protected-priority',
+    ]),
+    comparisonFocus: z.enum([
+      'graduation-timing',
+      'workload-fit',
+      'added-cost',
+    ]),
+    nextStepIds: z
+      .array(
+        z.enum([
+          'repeat-registration',
+          'aid-threshold',
+          'compare-paths',
+          'workload-check',
+          'cost-review',
+        ]),
+      )
+      .min(2)
+      .max(3)
+      .refine((values) => new Set(values).size === values.length, {
+        message: 'Next-step IDs must be unique.',
+      }),
+    advisorQuestionFocus: z.enum([
+      'graduation',
+      'workload',
+      'aid-and-cost',
+    ]),
+  })
+  .strict()
+
 const StudentFacingSentenceSchema = z
   .string()
   .trim()
@@ -66,6 +101,7 @@ export const ExplanationApiResponseSchema = z
   })
 
 export type ExplanationRequest = z.infer<typeof ExplanationRequestSchema>
+export type ClaudeNarrativePlan = z.infer<typeof ClaudeNarrativePlanSchema>
 export type ExplanationContent = z.infer<typeof ExplanationContentSchema>
 export type ExplanationApiResponse = z.infer<
   typeof ExplanationApiResponseSchema

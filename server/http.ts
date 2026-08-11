@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import {
   createExplanation,
   InvalidExplanationRequestError,
+  type ClaudeGenerator,
 } from './explanation.ts'
 
 const MAX_REQUEST_BYTES = 4_096
@@ -14,9 +15,86 @@ type ParsedRequest = IncomingMessage & {
 type ExplanationHttpOptions = {
   apiKey?: string
   model?: string
+  generate?: ClaudeGenerator
+  rateLimiter?: RequestRateLimiter
 }
 
 class RequestTooLargeError extends Error {}
+
+type RateLimitBucket = {
+  count: number
+  resetAt: number
+}
+
+export type RateLimitDecision = {
+  allowed: boolean
+  limit: number
+  remaining: number
+  retryAfterSeconds: number
+}
+
+export type RequestRateLimiter = {
+  check: (key: string) => RateLimitDecision
+}
+
+export function createRateLimiter({
+  maxRequests = 10,
+  windowMs = 60_000,
+  now = Date.now,
+}: {
+  maxRequests?: number
+  windowMs?: number
+  now?: () => number
+} = {}): RequestRateLimiter {
+  const buckets = new Map<string, RateLimitBucket>()
+  const maximumBuckets = 1_000
+
+  return {
+    check(key) {
+      const currentTime = now()
+      const existing = buckets.get(key)
+      const bucket =
+        !existing || existing.resetAt <= currentTime
+          ? { count: 0, resetAt: currentTime + windowMs }
+          : existing
+
+      bucket.count += 1
+      buckets.delete(key)
+      buckets.set(key, bucket)
+
+      if (buckets.size > maximumBuckets) {
+        const oldestKey = buckets.keys().next().value
+        if (oldestKey !== undefined) buckets.delete(oldestKey)
+      }
+
+      const allowed = bucket.count <= maxRequests
+      return {
+        allowed,
+        limit: maxRequests,
+        remaining: Math.max(0, maxRequests - bucket.count),
+        retryAfterSeconds: Math.max(
+          1,
+          Math.ceil((bucket.resetAt - currentTime) / 1_000),
+        ),
+      }
+    },
+  }
+}
+
+const defaultExplanationRateLimiter = createRateLimiter()
+
+function firstHeaderValue(value: string | string[] | undefined) {
+  const firstValue = Array.isArray(value) ? value[0] : value
+  return firstValue?.split(',')[0]?.trim()
+}
+
+function clientAddress(request: IncomingMessage) {
+  return (
+    firstHeaderValue(request.headers['x-vercel-forwarded-for']) ??
+    request.socket?.remoteAddress ??
+    'unknown-client'
+  )
+}
 
 function sendJson(
   response: ServerResponse,
@@ -79,9 +157,27 @@ export async function handleExplanationHttp(
     return
   }
 
+  if (options.apiKey?.trim()) {
+    const limiter = options.rateLimiter ?? defaultExplanationRateLimiter
+    const decision = limiter.check(clientAddress(request))
+    response.setHeader('RateLimit-Limit', decision.limit)
+    response.setHeader('RateLimit-Remaining', decision.remaining)
+    response.setHeader('RateLimit-Reset', decision.retryAfterSeconds)
+
+    if (!decision.allowed) {
+      response.setHeader('Retry-After', decision.retryAfterSeconds)
+      sendJson(response, 429, { error: 'Too many explanation requests.' })
+      return
+    }
+  }
+
   try {
     const body = await readJsonBody(request)
-    const result = await createExplanation(body, options)
+    const result = await createExplanation(body, {
+      apiKey: options.apiKey,
+      model: options.model,
+      generate: options.generate,
+    })
     sendJson(response, 200, result)
   } catch (error) {
     if (error instanceof RequestTooLargeError) {

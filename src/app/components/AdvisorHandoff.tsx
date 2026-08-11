@@ -20,7 +20,7 @@ export function AdvisorHandoff({ explanationState }: AdvisorHandoffProps) {
 
   const sourceLabel =
     status === 'claude'
-      ? 'Claude-assisted explanation'
+      ? 'Claude-personalized explanation'
       : status === 'deterministic'
         ? 'Deterministic demo explanation'
         : status === 'unavailable'
@@ -28,7 +28,7 @@ export function AdvisorHandoff({ explanationState }: AdvisorHandoffProps) {
           : 'Verified plan explanation'
   const explanationStatus =
     status === 'claude'
-      ? 'Claude phrased this summary from the fixed plan facts above.'
+      ? 'Claude selected the focus and next steps from verified plan facts.'
       : status === 'deterministic'
         ? 'Claude is optional; this verified fallback uses the same plan facts.'
         : status === 'unavailable'

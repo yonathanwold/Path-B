@@ -7,6 +7,7 @@ import type {
   ScenarioResult,
 } from '../../domain'
 import { useExplanation } from '../../ai/useExplanation'
+import { buildImpactSummary } from '../../presentation/scenario'
 import { StudentFacts } from './StudentFacts'
 import { PrioritySelector } from './PrioritySelector'
 import { PlanCascade } from './PlanCascade'
@@ -49,17 +50,15 @@ export const ResultsView = forwardRef<HTMLHeadingElement, ResultsViewProps>(
       scenario,
       selectedPath,
     })
+    const impactSummary = buildImpactSummary(dataset, scenario)
 
     return (
       <main id="main" className="results-view">
         <section className="results-intro" aria-labelledby="results-title">
           <h1 id="results-title" ref={headingRef} tabIndex={-1}>
-            Maya's plan hit a fault line.
+            {impactSummary.title}
           </h1>
-          <p>
-            CS 201 is offered once a year. Two courses are blocked directly and
-            five planned courses shift downstream.
-          </p>
+          <p>{impactSummary.summary}</p>
           <StudentFacts compact dataset={dataset} />
         </section>
 

@@ -54,6 +54,52 @@ export function graduationLabel(dataset: PathBDataset, termId: string) {
   return `${month} ${term.year}`
 }
 
+export function buildImpactSummary(
+  dataset: PathBDataset,
+  scenario: ScenarioResult,
+) {
+  const failedCourse = dataset.courses.find(
+    (course) => course.id === scenario.failedCourseId,
+  )
+  const courseCode = failedCourse?.code ?? scenario.failedCourseId
+  const offeringLabel = failedCourse
+    ? failedCourse.offeredIn.length === 1
+      ? `${failedCourse.offeredIn[0]}-only`
+      : failedCourse.offeredIn.join(' and ')
+    : 'limited-term'
+  const directCount = scenario.affectedCourses.filter(
+    (course) => course.depth === 1,
+  ).length
+  const countWords = [
+    'zero',
+    'one',
+    'two',
+    'three',
+    'four',
+    'five',
+    'six',
+    'seven',
+    'eight',
+    'nine',
+    'ten',
+  ]
+  const countLabel = (count: number) => countWords[count] ?? String(count)
+  const directPhrase =
+    directCount === 1
+      ? 'One course is'
+      : `${countLabel(directCount).replace(/^./, (letter) => letter.toUpperCase())} courses are`
+  const downstreamCount = scenario.affectedCourses.length
+  const downstreamPhrase =
+    downstreamCount === 1
+      ? 'one planned course shifts'
+      : `${countLabel(downstreamCount)} planned courses shift`
+
+  return {
+    title: `${dataset.student.name}'s plan hit a fault line.`,
+    summary: `${courseCode} is modeled as ${offeringLabel}. ${directPhrase} blocked directly and ${downstreamPhrase} downstream.`,
+  }
+}
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -150,7 +196,7 @@ export function buildDeterministicExplanation(
     tradeoff: `This protects ${presented.protects.join(' and ')}. The tradeoff is ${tradeoff}.`,
     nextSteps: [
       `Confirm the ${termLabel(dataset, scenario.repeatTermId)} repeat offering and registration deadline.`,
-      'Ask financial aid to verify the six-credit half-time assumption for Maya.',
+      `Ask financial aid to verify the ${dataset.student.minimumCreditsPerTerm}-credit half-time assumption for ${dataset.student.name}.`,
       'Bring both paths to advising before changing the registered plan.',
     ],
     advisorQuestion: buildAdvisorQuestion(dataset, scenario, selectedPath),

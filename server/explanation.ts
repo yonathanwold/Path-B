@@ -3,9 +3,11 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod'
 import { z } from 'zod'
 
 import {
+  ClaudeNarrativePlanSchema,
   ExplanationContentSchema,
   ExplanationRequestSchema,
   type ExplanationApiResponse,
+  type ClaudeNarrativePlan,
   type ExplanationContent,
   type ExplanationRequest,
 } from '../src/ai/contracts.ts'
@@ -180,95 +182,48 @@ export function buildClaudeFactPacket(
   })
 }
 
-function outputText(explanation: ExplanationContent) {
-  return [
-    explanation.summary,
-    explanation.tradeoff,
-    ...explanation.nextSteps,
-    explanation.advisorQuestion,
-  ].join(' ')
-}
-
-function normalizedCourseCode(value: string) {
-  return value.replace(/\s+/g, '').toUpperCase()
-}
-
-function matchesEvery<T>(values: T[], allowed: Set<T>) {
-  return values.every((value) => allowed.has(value))
-}
-
-export function isGroundedExplanation(
-  explanation: ExplanationContent,
+export function compileClaudeExplanation(
   facts: ClaudeFactPacket,
-) {
-  const text = outputText(explanation)
-  const courseClaims = [...text.matchAll(/\b[A-Z]{2,5}\s?\d{3}\b/g)].map(
-    (match) => normalizedCourseCode(match[0]),
-  )
-  const allowedCourses = new Set(
-    [
-      facts.disruption.failedCourseCode,
-      ...facts.disruption.affectedCourseCodes,
-      ...facts.repeatTermCompanionCourseCodes,
-    ].map(normalizedCourseCode),
-  )
-
-  if (!matchesEvery(courseClaims, allowedCourses)) return false
-
-  const factText = JSON.stringify(facts)
-  const years = [...text.matchAll(/\b20\d{2}\b/g)].map((match) => match[0])
-  if (!years.every((year) => factText.includes(year))) return false
-
-  const moneyClaims = [...text.matchAll(/\$[\d,]+/g)].map((match) => match[0])
-  const allowedMoney = new Set([
-    facts.selectedPath.illustrativeAddedCost,
-    facts.comparisonPath.illustrativeAddedCost,
-  ])
-  if (!matchesEvery(moneyClaims, allowedMoney)) return false
-
-  const allowedUnits: Record<string, Set<number>> = {
-    credit: new Set([
-      facts.student.minimumCreditsPerTerm,
-      facts.selectedPath.maximumCredits,
-      facts.comparisonPath.maximumCredits,
-    ]),
-    hour: new Set([facts.student.workHoursPerWeek]),
-    course: new Set([
-      facts.disruption.directBlockedCount,
-      facts.disruption.downstreamShiftCount,
-    ]),
-    term: new Set([
-      facts.selectedPath.addedTerms,
-      facts.comparisonPath.addedTerms,
-    ]),
+  plan: ClaudeNarrativePlan,
+): ExplanationContent {
+  const summaryByFocus: Record<ClaudeNarrativePlan['summaryFocus'], string> = {
+    'recovery-window': `${facts.student.firstName} can next repeat ${facts.disruption.failedCourseCode} in ${facts.disruption.nextRepeatTerm}. ${facts.selectedPath.title} is projected to reach ${facts.selectedPath.projectedGraduation}.`,
+    'dependency-cascade': `${facts.disruption.directBlockedCount} courses are blocked directly and ${facts.disruption.downstreamShiftCount} planned courses move downstream. ${facts.selectedPath.title} is projected to reach ${facts.selectedPath.projectedGraduation}.`,
+    'protected-priority': `${facts.selectedPath.title} protects ${facts.selectedPath.protects.join(' and ')} after the ${facts.disruption.failedCourseCode} disruption.`,
+  }
+  const comparisonByFocus: Record<
+    ClaudeNarrativePlan['comparisonFocus'],
+    string
+  > = {
+    'graduation-timing': `${facts.selectedPath.title} is projected for ${facts.selectedPath.projectedGraduation}; ${facts.comparisonPath.title} is projected for ${facts.comparisonPath.projectedGraduation}.`,
+    'workload-fit': `${facts.selectedPath.title} peaks at ${facts.selectedPath.maximumCredits} credits with a ${facts.selectedPath.workFit} work fit; ${facts.comparisonPath.title} peaks at ${facts.comparisonPath.maximumCredits} credits with a ${facts.comparisonPath.workFit} work fit.`,
+    'added-cost': `${facts.selectedPath.title} has a modeled added cost of ${facts.selectedPath.illustrativeAddedCost}; ${facts.comparisonPath.title} has a modeled added cost of ${facts.comparisonPath.illustrativeAddedCost}.`,
+  }
+  const nextStepById: Record<
+    ClaudeNarrativePlan['nextStepIds'][number],
+    string
+  > = {
+    'repeat-registration': `Confirm the ${facts.disruption.nextRepeatTerm} ${facts.disruption.failedCourseCode} repeat offering and registration deadline.`,
+    'aid-threshold': `Ask financial aid to verify the ${facts.student.minimumCreditsPerTerm}-credit half-time assumption before changing enrollment.`,
+    'compare-paths': `Bring ${facts.selectedPath.title} and ${facts.comparisonPath.title} to advising before changing the registered plan.`,
+    'workload-check': `Ask whether the ${facts.selectedPath.maximumCredits}-credit peak is realistic alongside ${facts.student.workHoursPerWeek} weekly work hours.`,
+    'cost-review': `Confirm what the illustrative ${facts.selectedPath.illustrativeAddedCost} added cost would actually be after aid and institution-specific pricing.`,
+  }
+  const advisorQuestionByFocus: Record<
+    ClaudeNarrativePlan['advisorQuestionFocus'],
+    string
+  > = {
+    graduation: `Can we confirm I can repeat ${facts.disruption.failedCourseCode} in ${facts.disruption.nextRepeatTerm} and that ${facts.selectedPath.title} is still projected to reach ${facts.selectedPath.projectedGraduation}?`,
+    workload: `Can we confirm I can repeat ${facts.disruption.failedCourseCode} in ${facts.disruption.nextRepeatTerm} and whether the ${facts.selectedPath.maximumCredits}-credit peak is workable alongside ${facts.student.workHoursPerWeek} weekly work hours?`,
+    'aid-and-cost': `Can financial aid confirm that repeating ${facts.disruption.failedCourseCode} in ${facts.disruption.nextRepeatTerm} keeps me at or above ${facts.student.minimumCreditsPerTerm} credits and what the modeled ${facts.selectedPath.illustrativeAddedCost} added cost would mean for my aid?`,
   }
 
-  for (const match of text.matchAll(
-    /\b(\d{1,3})[ -](credits?|hours?|courses?|terms?|semesters?)\b/gi,
-  )) {
-    const amount = Number(match[1])
-    const rawUnit = match[2]?.toLowerCase() ?? ''
-    const unit = rawUnit.startsWith('credit')
-      ? 'credit'
-      : rawUnit.startsWith('hour')
-        ? 'hour'
-        : rawUnit.startsWith('course')
-          ? 'course'
-          : 'term'
-    if (!allowedUnits[unit]?.has(amount)) return false
-  }
-
-  const requiredQuestionFacts = [
-    normalizedCourseCode(facts.disruption.failedCourseCode),
-    facts.disruption.nextRepeatTerm.toLowerCase(),
-  ]
-  const normalizedQuestion = normalizedCourseCode(
-    explanation.advisorQuestion,
-  ).toLowerCase()
-
-  return requiredQuestionFacts.every((fact) =>
-    normalizedQuestion.includes(normalizedCourseCode(fact).toLowerCase()),
-  )
+  return ExplanationContentSchema.parse({
+    summary: summaryByFocus[plan.summaryFocus],
+    tradeoff: comparisonByFocus[plan.comparisonFocus],
+    nextSteps: plan.nextStepIds.map((id) => nextStepById[id]),
+    advisorQuestion: advisorQuestionByFocus[plan.advisorQuestionFocus],
+  })
 }
 
 export async function generateClaudeExplanation(
@@ -282,12 +237,12 @@ export async function generateClaudeExplanation(
   })
   const message = await client.messages.parse({
     model: config.model,
-    max_tokens: 700,
+    max_tokens: 220,
     system: [
-      'You are the personalized explanation layer for Path B, a college-plan resilience tool.',
-      'The JSON fact packet is the complete source of truth. Never add, modify, or infer a course requirement, prerequisite, offering, date, credit load, cost, aid rule, or eligibility result.',
-      'Explain the selected path versus the comparison path in calm student-facing language. Make the tradeoff explicit, give 2 or 3 practical verification steps, and end with one useful advisor question.',
-      'Treat every value as synthetic demo data. Use projected or modeled language, never promise an outcome. Return plain text fields with no markdown or links.',
+      'You are the constrained personalization layer for Path B, a college-plan resilience tool.',
+      'The JSON packet is the complete source of truth. Select only the allowed focus and action IDs in the response schema.',
+      'Choose the emphasis, comparison lens, next-step order, and advisor-question focus that best fit the selected priority and path.',
+      'Do not write student-facing prose or introduce any academic, cost, aid, eligibility, or timing claim. The server will render the selected IDs from verified facts.',
     ].join(' '),
     messages: [
       {
@@ -297,12 +252,12 @@ export async function generateClaudeExplanation(
     ],
     output_config: {
       effort: 'low',
-      format: zodOutputFormat(ExplanationContentSchema),
+      format: zodOutputFormat(ClaudeNarrativePlanSchema),
     },
   })
 
   if (!message.parsed_output) {
-    throw new Error('Claude returned no structured explanation.')
+    throw new Error('Claude returned no structured narrative plan.')
   }
 
   return message.parsed_output
@@ -354,16 +309,16 @@ export async function createExplanation(
         model: options.model?.trim() || DEFAULT_CLAUDE_MODEL,
       },
     )
-    const parsed = ExplanationContentSchema.safeParse(generated)
+    const parsed = ClaudeNarrativePlanSchema.safeParse(generated)
 
-    if (!parsed.success || !isGroundedExplanation(parsed.data, facts)) {
+    if (!parsed.success) {
       return deterministicResponse(fallback, 'invalid-ai-output')
     }
 
     return {
       mode: 'claude',
       reason: 'ai-complete',
-      explanation: parsed.data,
+      explanation: compileClaudeExplanation(facts, parsed.data),
     }
   } catch {
     return deterministicResponse(fallback, 'ai-unavailable')

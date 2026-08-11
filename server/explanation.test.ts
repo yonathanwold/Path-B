@@ -21,18 +21,43 @@ const fasterRequest: ExplanationRequest = {
   selectedPathId: 'faster-finish',
 }
 
-const groundedClaudeOutput = {
-  summary:
-    'Maya can compare Faster finish with Steadier load using the modeled plan.',
-  tradeoff:
-    'Faster finish is projected for May 2027 but has a 15-credit peak while Maya works 20 hours weekly.',
-  nextSteps: [
-    'Confirm the Spring 2026 CS 201 repeat offering with advising.',
-    'Ask financial aid to verify the 6-credit threshold before changing enrollment.',
-  ],
-  advisorQuestion:
-    'Can I repeat CS 201 in Spring 2026 and still follow the Faster finish path?',
-}
+const groundedClaudePlan = {
+  summaryFocus: 'recovery-window',
+  comparisonFocus: 'workload-fit',
+  nextStepIds: ['repeat-registration', 'aid-threshold'],
+  advisorQuestionFocus: 'graduation',
+} as const
+
+const inventedAcademicOutputs = [
+  {
+    label: 'course offering',
+    output: {
+      ...groundedClaudePlan,
+      summaryFocus: 'Maya can take CS 201 in a new summer session.',
+    },
+  },
+  {
+    label: 'prerequisite',
+    output: {
+      ...groundedClaudePlan,
+      comparisonFocus: 'A remedial workshop is now required.',
+    },
+  },
+  {
+    label: 'aid rule',
+    output: {
+      ...groundedClaudePlan,
+      nextStepIds: ['repeat-registration', 'Aid is guaranteed at 6 credits.'],
+    },
+  },
+  {
+    label: 'eligibility result',
+    output: {
+      ...groundedClaudePlan,
+      advisorQuestionFocus: 'Maya remains eligible automatically.',
+    },
+  },
+]
 
 describe('createExplanation', () => {
   it('rejects unknown scenarios and browser-supplied facts', async () => {
@@ -57,19 +82,25 @@ describe('createExplanation', () => {
     expect(response.explanation.advisorQuestion).toContain('Spring 2026')
   })
 
-  it('accepts a structured, grounded Claude explanation', async () => {
-    const generate = vi.fn().mockResolvedValue(groundedClaudeOutput)
+  it('compiles a structured Claude plan into deterministic student-facing text', async () => {
+    const generate = vi.fn().mockResolvedValue(groundedClaudePlan)
 
     const response = await createExplanation(fasterRequest, {
       apiKey: 'test-key',
       generate,
     })
 
-    expect(response).toMatchObject({
-      mode: 'claude',
-      reason: 'ai-complete',
-      explanation: groundedClaudeOutput,
+    expect(response.mode).toBe('claude')
+    expect(response.reason).toBe('ai-complete')
+    expect(response.explanation).toMatchObject({
+      summary:
+        'Maya can next repeat CS 201 in Spring 2026. Faster finish is projected to reach May 2027.',
+      nextSteps: [
+        'Confirm the Spring 2026 CS 201 repeat offering and registration deadline.',
+        'Ask financial aid to verify the 6-credit half-time assumption before changing enrollment.',
+      ],
     })
+    expect(JSON.stringify(response.explanation)).not.toContain('summaryFocus')
     const [facts, config] = generate.mock.calls[0]!
     expect(facts).toMatchObject({
       scenarioId: 'maya-cs201-failure',
@@ -88,19 +119,20 @@ describe('createExplanation', () => {
     expect(response.reason).toBe('invalid-ai-output')
   })
 
-  it('falls back when Claude introduces an unknown academic fact', async () => {
-    const response = await createExplanation(fasterRequest, {
-      apiKey: 'test-key',
-      generate: vi.fn().mockResolvedValue({
-        ...groundedClaudeOutput,
-        advisorQuestion:
-          'Can I take BIO 999 with CS 201 in Spring 2026 and still follow this path?',
-      }),
-    })
+  it.each(inventedAcademicOutputs)(
+    'falls back when Claude tries to introduce an invented $label claim',
+    async ({ output }) => {
+      const response = await createExplanation(fasterRequest, {
+        apiKey: 'test-key',
+        generate: vi.fn().mockResolvedValue(output),
+      })
 
-    expect(response.mode).toBe('deterministic')
-    expect(response.reason).toBe('invalid-ai-output')
-  })
+      expect(response.mode).toBe('deterministic')
+      expect(response.reason).toBe('invalid-ai-output')
+      expect(JSON.stringify(response.explanation)).not.toContain('guaranteed')
+      expect(JSON.stringify(response.explanation)).not.toContain('remedial')
+    },
+  )
 
   it('falls back when the Claude request times out or fails', async () => {
     const response = await createExplanation(fasterRequest, {
