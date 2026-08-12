@@ -2366,7 +2366,7 @@ h3 {
   .timeline-step time {
     position: relative;
     padding-left: 28px;
-    font-size: 0.72rem;
+    font-size: 0.8125rem;
     font-weight: 800;
     text-transform: uppercase;
   }
@@ -2413,7 +2413,7 @@ h3 {
 
   .timeline-step > div > span:not(.timeline-step__type) {
     color: var(--teal-dark);
-    font-size: 0.78rem;
+    font-size: 0.8125rem;
     font-weight: 750;
   }
 
@@ -2439,19 +2439,19 @@ h3 {
 
   .timeline-step p strong {
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 0.78rem;
+    font-size: 0.8125rem;
   }
 
   .timeline-step p span {
     color: var(--teal-dark);
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 750;
   }
 
   .timeline-step p small {
     grid-column: 2 / -1;
     color: var(--muted);
-    font-size: 0.66rem;
+    font-size: 0.75rem;
     text-decoration: line-through;
     text-decoration-color: var(--coral);
   }
@@ -2467,7 +2467,7 @@ h3 {
   .why-disclosure ol {
     margin: 0 0 14px;
     color: var(--muted);
-    font-size: 0.76rem;
+    font-size: 0.8125rem;
     line-height: 1.55;
   }
 
@@ -2511,7 +2511,8 @@ h3 {
     padding-left: 29px;
     margin-top: -8px;
     color: var(--muted);
-    font-size: 0.7rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
   }
 
   .recommendation-strip {

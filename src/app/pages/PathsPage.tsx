@@ -55,9 +55,6 @@ export function PathsPage({
           Costs are illustrative; aid and institutional pricing require human verification.
         </p>
         <div>
-          <RouteLink className="text-link" navigate={navigate} to="/advisor">
-            Review assumptions on the next step
-          </RouteLink>
           <RouteLink className="primary-button" navigate={navigate} to="/advisor">
             Prepare advisor brief <ArrowRight aria-hidden="true" size={18} />
           </RouteLink>
