@@ -90,3 +90,5 @@ Start at `/`, open **Review Maya's plan**, choose **Stress-test this plan**, run
 The repository is ready for a Vercel deployment. Use `npm run build`, keep the output directory as `dist`, and set `ANTHROPIC_API_KEY` only in the deployment's server-side environment if Claude assistance is desired. `vercel.json` provides nested-route rewrites, the `/api/explain` function, and production security headers.
 
 Path B was built for the **Stellic Pathfinders Challenge**, primarily for **Overcoming Obstacles** with **Degree Planning & Discovery** as a secondary category.
+
+The copy-ready 500-word entry, complete tool list, timed recording plan, and final publishing checklist are in [SUBMISSION.md](SUBMISSION.md).
