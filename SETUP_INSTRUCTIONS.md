@@ -1,72 +1,70 @@
-# Install and run this Sol Max setup
+# Codex setup for Path B
 
-## 1. Put these files in the Path-B repository root
-Copy the contents of this package into the repository so the resulting layout includes:
+This repository is prepared for GPT-5.6 Sol with Ultra orchestration. Ultra is the higher-level multi-agent mode; `max` is the highest reasoning effort supported by the underlying GPT-5.6 Sol model. [OpenAI's GPT-5.6 guidance](https://developers.openai.com/api/docs/guides/latest-model) describes that distinction.
 
-```text
-Path-B/
-  AGENTS.md
-  BUILD_CONTEXT.md
-  CODEX_CONTEXT.md
-  HACKATHON_RUBRIC.md
-  ORCHESTRATION.md
-  START_PROMPT.md
-  .codex/
-    config.toml
-    agents/
-      scout.toml
-      product_judge.toml
-      architecture_reviewer.toml
-      ux_critic.toml
-      qa_runner.toml
-      security_reviewer.toml
-      demo_judge.toml
+## Repository configuration
+
+The trusted project layer in `.codex/config.toml` intentionally sets:
+
+```toml
+model = "gpt-5.6-sol"
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
+default_subagent_model = "gpt-5.6-terra"
+default_subagent_reasoning_effort = "medium"
 ```
 
-Do not replace a newer `CODEX_CONTEXT.md` from your repository with an older copy; this package intentionally does not include that file.
+It intentionally does **not** pin `model_reasoning_effort = "max"`. Ultra remains selectable at the user/session layer without weakening or deleting the Path B agent configuration.
 
-## 2. Start Codex from the repository root
+All project-specific agents remain in `.codex/agents/`:
 
-```bash
-cd Path-B
+- `architecture_reviewer`
+- `demo_judge`
+- `product_judge`
+- `qa_runner`
+- `scout`
+- `security_reviewer`
+- `ux_critic`
+
+Each custom reviewer uses GPT-5.6 Terra with a task-appropriate effort and a read-only sandbox. The primary thread remains GPT-5.6 Sol.
+
+## Start a fresh prepared session
+
+From the repository root:
+
+```powershell
 codex
 ```
 
-Trust the repository if Codex asks. Project-scoped `.codex/` configuration is ignored for untrusted projects.
+The current user-level Codex configuration already selects GPT-5.6 Sol Ultra, so no project override or hand-edited Max setting is required.
 
-## 3. Verify the primary model
-Run:
+Inside Codex, run:
 
 ```text
 /status
 ```
 
-The effective model should be GPT-5.6 Sol and the reasoning effort should be max. If a CLI flag or user-level config overrides the project setting, use `/model` to select GPT-5.6 Sol / max or remove the higher-precedence override.
+Verify that the primary model is GPT-5.6 Sol and the active mode is Ultra. A thread that was created under an older mode may keep that mode until a fresh session is started.
 
-## 4. Verify custom agents before the long run
-Ask Codex:
+## Validate the installed CLI and project layer
 
-```text
-List the project-scoped custom agents available in this repository and report each agent's configured model, reasoning effort, and sandbox mode. Do not spawn them yet.
+The setup was verified with Codex CLI `0.147.0-alpha.6.6`:
+
+```powershell
+codex --version
+codex features list
 ```
 
-Then perform a cheap smoke test:
+`features list` also serves as a configuration parse check. Project-scoped `.codex/` files load only when the repository is trusted.
 
-```text
-Use the scout agent only. Inspect the repository root and return at most 10 bullets describing what exists. Do not change files.
-```
+## Operating pattern
 
-Use `/agent` if you want to inspect the child thread.
+- Keep the primary thread as the sole product owner and integrator.
+- Use one or two bounded Terra reviewers at a time; three only for a deliberate audit checkpoint.
+- Preserve the deterministic academic engine as the source of truth.
+- Use `qa_runner`, `security_reviewer`, `product_judge`, `ux_critic`, and `demo_judge` at the checkpoints defined in `ORCHESTRATION.md`.
+- Do not remove `.codex/agents/`, `AGENTS.md`, or the project concurrency settings to change modes.
 
-## 5. Launch the build
-Paste the contents of `START_PROMPT.md` into the primary thread.
-
-## Usage strategy
-- Keep the primary thread on Sol Max for architecture, integration, debugging, and hard product decisions.
-- Let named Terra/Luna agents do short bounded reviews rather than inheriting a giant task description.
-- Do not run all agents at once. The configured concurrency cap is an upper bound, not a target.
-- Use `/compact` if the main thread becomes noisy during a long run.
-- Keep each chat focused on this coherent build outcome; if you later do unrelated experiments, fork or start another thread.
-
-## Safety/permissions
-This package uses `workspace-write` with `approval_policy = "on-request"`. That gives the main agent repository write access without defaulting to unrestricted machine access. Do not switch to unrestricted/full-access modes merely to avoid an occasional approval prompt.
+The main build prompt is in `START_PROMPT.md`.
